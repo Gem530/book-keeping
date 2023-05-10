@@ -1,0 +1,7 @@
+/* 主题色 */
+:root {
+	--theme-body-bg: #fff;
+	--theme-text-color: #333;
+	--theme-primary: #358eef;
+	--theme-gray: #ededed;
+}

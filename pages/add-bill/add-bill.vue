@@ -78,7 +78,7 @@
 		},
 		data() {
 			return {
-				amount: 0,
+				amount: '',
 				remark: '',
 				tabIndex: 2,
 				tabList: [

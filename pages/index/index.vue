@@ -172,7 +172,7 @@
 								const index = dateList.findIndex(el => el.date == date)
 								if (index != -1) {
 									dateList[index].list.push(v)
-									dateList[index].amount += v.amount
+									dateList[index].daybalance += v.amount
 								} else {
 									dateList.push({ date, daybalance: v.amount, list: [v] })
 								}

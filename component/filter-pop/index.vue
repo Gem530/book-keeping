@@ -45,7 +45,7 @@
 						v-for="item in incomeTypeList"
 						:class="{'filter-types-item': true, 'types-active': typeActive(item.name)}"
 						@click="() => chooseType(item.name)"
-					>{{item.name}}-{{typeListTemp.includes(item.name)}}</view>
+					>{{item.name}}</view>
 				</view>
 				
 				<view class="filter-btn-group">

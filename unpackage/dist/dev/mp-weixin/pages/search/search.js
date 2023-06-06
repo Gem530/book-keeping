@@ -466,6 +466,11 @@ var _default = {
     },
     change: function change(e) {
       console.log(e);
+    },
+    toPath: function toPath(v) {
+      uni.navigateTo({
+        url: v
+      });
     }
   }
 };

@@ -115,11 +115,9 @@ var render = function () {
   var l1 = _vm.__map(_vm.incomeTypeList, function (item, __i1__) {
     var $orig = _vm.__get_orig(item)
     var m1 = _vm.typeActive(item.name)
-    var g0 = _vm.typeListTemp.includes(item.name)
     return {
       $orig: $orig,
       m1: m1,
-      g0: g0,
     }
   })
   if (!_vm._isMounted) {

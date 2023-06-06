@@ -138,9 +138,9 @@
             "urlCheck" : false
         },
         "usingComponents" : true,
-		"optimization": {
-			"subPackages": true // 是否启用分包优化
-		}
+        "optimization" : {
+            "subPackages" : true // 是否启用分包优化
+        }
     },
     "mp-alipay" : {
         "usingComponents" : true
@@ -156,5 +156,11 @@
     },
     "vueVersion" : "2",
     "fallbackLocale" : "zh-Hans",
-    "locale" : "zh-Hans"
+    "locale" : "zh-Hans",
+    "h5" : {
+        "title" : "小助手",
+        "router" : {
+            "base" : "./"
+        }
+    }
 }

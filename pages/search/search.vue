@@ -27,14 +27,14 @@
 				</view>
 			</view>
 			<view class="balance-list">
-				<view class="balance-item">
+				<view class="balance-item" @click="toPath('/pageSub/pages/statistics/statistics?type=income')">
 					<uni-icons type="plus-filled" size="35" color="#ddd"></uni-icons>
 					<view class="balance-info">
 						<view class="balance-item-title">收入</view>
 						<view class="balance-item-value">￥{{monthIncome}}</view>
 					</view>
 				</view>
-				<view class="balance-item">
+				<view class="balance-item" @click="toPath('/pageSub/pages/statistics/statistics?type=output')">
 					<uni-icons type="minus-filled" size="35" color="#ddd"></uni-icons>
 					<view class="balance-info">
 						<view class="balance-item-title">支出</view>
@@ -236,6 +236,9 @@
 			change (e) {
 				console.log(e)
 			},
+			toPath (v) {
+				uni.navigateTo({url: v})
+			}
 		}
 	}
 </script>

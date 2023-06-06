@@ -1,0 +1,6 @@
+{
+  "component": true,
+  "usingComponents": {
+    "uni-ec-canvas": "/pageSub/components/uni-ec-canvas/uni-ec-canvas"
+  }
+}

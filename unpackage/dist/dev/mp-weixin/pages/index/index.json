@@ -1,0 +1,9 @@
+{
+  "navigationBarTitleText": "uni-app",
+  "usingComponents": {
+    "uni-icons": "/uni_modules/uni-icons/components/uni-icons/uni-icons",
+    "sider": "/component/sider/index",
+    "nav-bar": "/component/nav-bar/nav-bar",
+    "biaofun-datetime-picker": "/component/biaofun-datetime-picker/biaofun-datetime-picker"
+  }
+}

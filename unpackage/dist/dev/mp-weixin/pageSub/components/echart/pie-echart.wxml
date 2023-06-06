@@ -1,0 +1,1 @@
+<view><block wx:if="{{ec.option}}"><uni-ec-canvas class="uni-ec2-canvas vue-ref" style="{{'width:'+(width)+';'+('height:'+(height)+';')+('display:'+('block')+';')}}" vue-id="fbf5d27a-1" id="uni-ec2-canvas" canvas-id="uni-ec2-canvas" ec="{{ec}}" data-ref="uni-ec2-canvas" bind:__l="__l"></uni-ec-canvas></block></view>

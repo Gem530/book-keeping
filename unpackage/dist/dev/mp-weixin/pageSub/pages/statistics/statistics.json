@@ -1,0 +1,10 @@
+{
+  "navigationBarTitleText": "",
+  "enablePullDownRefresh": false,
+  "usingComponents": {
+    "nav-bar": "/component/nav-bar/nav-bar",
+    "pie-chart": "/pageSub/components/echart/pie-echart",
+    "line-chart": "/pageSub/components/echart/echart",
+    "biaofun-datetime-picker": "/component/biaofun-datetime-picker/biaofun-datetime-picker"
+  }
+}

@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" href="./static/favicon.ico" />
+    <link rel="icon" href="https://gem530.github.io/static/favicon.ico" />
     <script>
       var coverSupport = 'CSS' in window && typeof CSS.supports === 'function' && (CSS.supports('top: env(a)') ||
         CSS.supports('top: constant(a)'))
@@ -11,6 +11,9 @@
         (coverSupport ? ', viewport-fit=cover' : '') + '" />')
     </script>
     <title></title>
+	<!-- #ifdef MP-WEIXIN -->
+	<script src="https://gem530.github.io/static/echarts.js"></script>
+	<!-- #endif -->
     <!--preload-links-->
     <!--app-context-->
   </head>

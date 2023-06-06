@@ -1,0 +1,20 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/add-bill/add-bill",
+    "pages/primary/primary",
+    "pages/search/search"
+  ],
+  "subPackages": [
+    {
+      "root": "pageSub",
+      "pages": [
+        "pages/statistics/statistics"
+      ]
+    }
+  ],
+  "window": {
+    "navigationStyle": "custom"
+  },
+  "usingComponents": {}
+}

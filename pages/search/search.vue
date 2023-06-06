@@ -1,5 +1,5 @@
 <template>
-	<view :class="`content ${$store.getters.themeLive}`">
+	<view :class="['content', theme]">
 		<!-- 导航栏 -->
 		<NavBar>
 			<template #center>
@@ -13,11 +13,11 @@
 				></biaofun-datetime-picker> -->
 				<input type="text" placeholder="金额/分类/备注" v-model="searchTxt" @input="filterBill">
 			</template>
-			<template #right><uni-icons type="settings" size="20" :color="$store.getters.textColorLive" @click="toggle"></uni-icons></template>
+			<template #right><uni-icons type="settings" size="20" :color="colorTheme" @click="toggle"></uni-icons></template>
 		</NavBar>
 		
 		<!-- 总结余 -->
-		<view class="balance" :style="{background: $store.getters.primaryColorLive + ' !important'}">
+		<view class="balance" :style="{background: primaryTheme + ' !important'}">
 			<view class="balance-list">
 				<view class="balance-item">
 					<view class="balance-info">
@@ -28,14 +28,14 @@
 			</view>
 			<view class="balance-list">
 				<view class="balance-item">
-					<uni-icons type="plus-filled" size="35" color="var(--theme-gray)"></uni-icons>
+					<uni-icons type="plus-filled" size="35" color="#ddd"></uni-icons>
 					<view class="balance-info">
 						<view class="balance-item-title">收入</view>
 						<view class="balance-item-value">￥{{monthIncome}}</view>
 					</view>
 				</view>
 				<view class="balance-item">
-					<uni-icons type="minus-filled" size="35" color="var(--theme-gray)"></uni-icons>
+					<uni-icons type="minus-filled" size="35" color="#ddd"></uni-icons>
 					<view class="balance-info">
 						<view class="balance-item-title">支出</view>
 						<view class="balance-item-value">￥{{monthOutput}}</view>
@@ -60,7 +60,7 @@
 					class="bill-item"
 					v-for="item in el.list">
 					<view class="bill-left">
-						<i :class="`iconfont ${item.amountType.icon}`" :style="{'color': item.amountType.color || $store.getters.primaryColorLive}"></i>
+						<i :class="['iconfont', item.amountType.icon]" :style="{'color': item.amountType.color || primaryTheme}"></i>
 						<view class="bill-left-type">
 							<view class="bill-type-name">{{item.amountType.name}}</view>
 							<view class="bill-type-remark">{{item.remark}}</view>
@@ -68,8 +68,8 @@
 					</view>
 					<view class="bill-right">
 						<view
-							:class="`bill-amount ${item.type == 1 ? '' : 'red'}`"
-							:style="{'color': item.type == 1 ? $store.getters.primaryColorLive : ''}"
+							:class="['bill-amount', item.type == 1 ? '' : 'red']"
+							:style="{'color': item.type == 1 ? primaryTheme : ''}"
 						>￥{{item.amount}}</view>
 						<view class="bill-time">{{item.time}}</view>
 					</view>
@@ -103,6 +103,17 @@
 			NavBar,
 			FilterPop,
 			BiaofunDatetimePicker,
+		},
+		computed: {
+			theme () {
+				return this.$store.getters.themeLive
+			},
+			colorTheme () {
+				return this.$store.getters.textColorLive
+			},
+			primaryTheme () {
+				return this.$store.getters.primaryColorLive
+			},
 		},
 		data() {
 			return {
@@ -265,7 +276,7 @@
 					.balance-item-title {
 						margin-bottom: 10rpx;
 						font-size: 24rpx;
-						color: var(--theme-gray);
+						color: #ddd;
 					}
 					
 					.balance-item-value {
@@ -296,13 +307,13 @@
 				.bill-list-week {
 					padding-left: 20rpx;
 					font-size: 24rpx;
-					color: #999;
+					color: #ddd;
 				}
 				
 				.bill-list-daybalance {
 					flex: 1;
 					font-size: 24rpx;
-					color: #999;
+					color: #ddd;
 					text-align: right;
 				}
 			}
@@ -312,7 +323,7 @@
 				width: 100%;
 				padding: 30rpx;
 				margin-bottom: 10rpx;
-				border: 1px solid var(--theme-gray);
+				border: 1px solid #ddd;
 				border-radius: 10rpx;
 				
 				.bill-left {
@@ -331,7 +342,7 @@
 						}
 						.bill-type-remark {
 							font-size: 24rpx;
-							color: #999;
+							color: #ddd;
 						}
 					}
 				}
@@ -348,7 +359,7 @@
 					}
 					.bill-time {
 						font-size: 24rpx;
-						color: #999;
+						color: #ddd;
 					}
 				}
 			}

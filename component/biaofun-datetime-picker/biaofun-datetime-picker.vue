@@ -13,7 +13,7 @@
 		<picker mode="multiSelector" :range="range" range-key="text" @change="change" @columnchange="columnchange" :value="value" :disabled="disabled">
 			<view class="content" :class="{ placeholder: !dateStr }">
 				<slot :date="dateStr ? dateStr : placeholder">{{ dateStr ? dateStr : placeholder }}</slot>
-				<uni-icons type="bottom" size="15" :color="$store.getters.textColorLive"></uni-icons>
+				<uni-icons type="bottom" size="15" :color="colorTheme"></uni-icons>
 			</view>
 		</picker>
 	</view>
@@ -87,6 +87,12 @@ export default {
 		defaultValue() {
 			// 设置默认值
 			this.setDefaultValue();
+		}
+	},
+	
+	computed: {
+		colorTheme () {
+			return this.$store.getters.textColorLive
 		}
 	},
 

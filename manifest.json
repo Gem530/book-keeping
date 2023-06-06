@@ -133,11 +133,14 @@
     "quickapp" : {},
     /* 小程序特有相关 */
     "mp-weixin" : {
-        "appid" : "",
+        "appid" : "wxfac328c3ee26f0d2",
         "setting" : {
             "urlCheck" : false
         },
-        "usingComponents" : true
+        "usingComponents" : true,
+		"optimization": {
+			"subPackages": true // 是否启用分包优化
+		}
     },
     "mp-alipay" : {
         "usingComponents" : true

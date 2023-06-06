@@ -84,3 +84,7 @@ $uni-font-size-paragraph:15px;
 	align-items: $align_items;
 	flex-wrap: $wrap;
 }
+
+* {
+	box-sizing: border-box;
+}

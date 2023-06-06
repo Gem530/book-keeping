@@ -1,7 +1,7 @@
 <template>
 	<view>
 		<uni-popup ref="filterPop" background-color="#fff" @change="change">
-			<view :class="`popup-content ${$store.getters.themeLive}`">
+			<view :class="['popup-content', theme]">
 				<view class="filter-title">日期筛选</view>
 				<view class="filter-date">
 					<text>开始日期：</text>
@@ -32,9 +32,9 @@
 				<view class="filter-types">
 					<view
 						:key="item.id"
-						v-for="item in $store.state.outputTypeList"
+						v-for="item in outputTypeList"
 						:class="{'filter-types-item': true, 'types-active': typeActive(item.name)}"
-						@click="chooseType(item.name)"
+						@click="() => chooseType(item.name)"
 					>{{item.name}}</view>
 				</view>
 				
@@ -42,10 +42,10 @@
 				<view class="filter-types">
 					<view
 						:key="item.id"
-						v-for="item in $store.state.incomeTypeList"
+						v-for="item in incomeTypeList"
 						:class="{'filter-types-item': true, 'types-active': typeActive(item.name)}"
-						@click="chooseType(item.name)"
-					>{{item.name}}</view>
+						@click="() => chooseType(item.name)"
+					>{{item.name}}-{{typeListTemp.includes(item.name)}}</view>
 				</view>
 				
 				<view class="filter-btn-group">
@@ -79,6 +79,17 @@
 				default: dayjs(new Date().getTime() - (1000 * 60 * 60 * 24 * 30)).format('YYYY-MM-DD') + ' 00:00'
 			},
 		},
+		computed: {
+			theme () {
+				return this.$store.getters.themeLive
+			},
+			outputTypeList () {
+				return this.$store.state.outputTypeList
+			},
+			incomeTypeList () {
+				return this.$store.state.incomeTypeList
+			}
+		},
 		data() {
 			return {
 				endTimeTemp: this.endTime,
@@ -86,20 +97,6 @@
 				startTimeTemp: this.startTime,
 			}
 		},
-		// watch: {
-		// 	endTimeTemp(val) {
-		// 		if (val) this.$emit('update:endTime', val)
-		// 	},
-		// 	typeListTemp: {
-		// 		handler(val) {
-		// 			if (val) this.$emit('update:typeList', val)
-		// 		},
-		// 		deep: true
-		// 	},
-		// 	startTimeTemp(val) {
-		// 		if (val) this.$emit('update:startTime', val)
-		// 	},
-		// },
 		created() {
 			const that = this
 		},
@@ -172,7 +169,7 @@
 		.filter-date-input {
 			@include flex(flex-start);
 			flex: 1;
-			border-bottom: 1rpx solid var(--theme-gray);
+			border-bottom: 1rpx solid #ddd;
 		}
 	}
 	
@@ -181,12 +178,12 @@
 		
 		.filter-types-item {
 			padding: 10rpx 20rpx;
-			border: 1px solid var(--theme-gray);
+			border: 1px solid #ddd;
 			border-radius: 10rpx;
 			margin: 0 10rpx 5rpx 0;
 			
 			&.types-active {
-				background: var(--theme-gray);
+				background: #ddd;
 			}
 		}
 	}

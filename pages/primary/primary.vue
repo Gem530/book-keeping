@@ -1,5 +1,5 @@
 <template>
-	<view :class="`primary ${$store.getters.themeLive}`">
+	<view :class="['primary', theme]">
 		<NavBar>
 			<template #center>主题色</template>
 		</NavBar>
@@ -8,8 +8,8 @@
 			<view
 				:key="item"
 				v-for="item in colors"
-				:class="{'primary-item': true, 'primary-item-active': item == $store.getters.primaryColorLive}"
-				:style="{background: item, borderColor: item == $store.getters.primaryColorLive ? $store.getters.textColorLive : ''}"
+				:class="{'primary-item': true, 'primary-item-active': item == primaryTheme}"
+				:style="{background: item, borderColor: item == primaryTheme ? colorTheme : ''}"
 				@click="changePrimary(item)"
 			></view>
 		</view>
@@ -22,6 +22,17 @@
 		name: 'primary',
 		components: {
 			NavBar
+		},
+		computed: {
+			theme () {
+				return this.$store.getters.themeLive
+			},
+			colorTheme () {
+				return this.$store.getters.textColorLive
+			},
+			primaryTheme () {
+				return this.$store.getters.primaryColorLive
+			},
 		},
 		data() {
 			return {

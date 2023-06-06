@@ -1,8 +1,8 @@
 <template>
-	<view :class="`content ${$store.getters.themeLive}`">
+	<view :class="['content', theme]">
 		<!-- 导航栏 -->
 		<NavBar>
-			<template #left><uni-icons type="bars" size="20" @click="toggle" :color="$store.getters.textColorLive"></uni-icons></template>
+			<template #left><uni-icons type="bars" size="20" @click="toggle" :color="colorTheme"></uni-icons></template>
 			<template #center>
 				<biaofun-datetime-picker
 					end="2100"
@@ -13,11 +13,11 @@
 					@change="changeDatetimePicker"
 				></biaofun-datetime-picker>
 			</template>
-			<template #right><uni-icons type="search" size="20" :color="$store.getters.textColorLive" @click="toPath('/pages/search/search')"></uni-icons></template>
+			<template #right><uni-icons type="search" size="20" :color="colorTheme" @click="toPath('/pages/search/search')"></uni-icons></template>
 		</NavBar>
 		
 		<!-- 总结余 -->
-		<view class="balance" :style="{background: $store.getters.primaryColorLive + ' !important'}">
+		<view class="balance" :style="{background: primaryTheme + ' !important'}">
 			<view class="balance-list">
 				<view class="balance-item">
 					<view class="balance-info">
@@ -27,15 +27,15 @@
 				</view>
 			</view>
 			<view class="balance-list">
-				<view class="balance-item" @click="toPath('/pages/statistics/statistics?type=income')">
-					<uni-icons type="plus-filled" size="35" color="var(--theme-gray)"></uni-icons>
+				<view class="balance-item" @click="toPath('/pageSub/pages/statistics/statistics?type=income')">
+					<uni-icons type="plus-filled" size="35" color="#ddd"></uni-icons>
 					<view class="balance-info">
 						<view class="balance-item-title">月收入</view>
 						<view class="balance-item-value">￥{{monthIncome}}</view>
 					</view>
 				</view>
-				<view class="balance-item" @click="toPath('/pages/statistics/statistics?type=output')">
-					<uni-icons type="minus-filled" size="35" color="var(--theme-gray)"></uni-icons>
+				<view class="balance-item" @click="toPath('/pageSub/pages/statistics/statistics?type=output')">
+					<uni-icons type="minus-filled" size="35" color="#ddd"></uni-icons>
 					<view class="balance-info">
 						<view class="balance-item-title">月支出</view>
 						<view class="balance-item-value">￥{{monthOutput}}</view>
@@ -45,13 +45,13 @@
 		</view>
 		
 		<!-- 月预算 -->
-		<view :class="`budget ${$store.getters.themeLive}`" v-if="buget">
+		<view :class="['budget', theme]" v-if="buget">
 			<view class="budget-flex">
 				<view class="budget-tip">月预算</view>
 				<view class="budget-value">剩余:￥{{buget - Math.abs(monthOutput)}} &nbsp;&nbsp; 预算:￥{{buget}}</view>
 			</view>
 			<view class="budget-progress">
-				<view class="budget-progress-bar" :style="{width: progressWidth, background: $store.getters.primaryColorLive + ' !important'}"></view>
+				<view class="budget-progress-bar" :style="{width: progressWidth, background: primaryTheme + ' !important'}"></view>
 			</view>
 		</view>
 		
@@ -71,7 +71,7 @@
 					class="bill-item"
 					v-for="item in el.list">
 					<view class="bill-left">
-						<i :class="`iconfont ${item.amountType.icon}`" :style="{'color': item.amountType.color || $store.getters.primaryColorLive}"></i>
+						<i :class="['iconfont', item.amountType.icon]" :style="{'color': item.amountType.color || primaryTheme}"></i>
 						<view class="bill-left-type">
 							<view class="bill-type-name">{{item.amountType.name}}</view>
 							<view class="bill-type-remark">{{item.remark}}</view>
@@ -79,8 +79,8 @@
 					</view>
 					<view class="bill-right">
 						<view
-							:class="`bill-amount ${item.type == 1 ? '' : 'red'}`"
-							:style="{'color': item.type == 1 ? $store.getters.primaryColorLive : ''}"
+							:class="['bill-amount', item.type == 1 ? '' : 'red']"
+							:style="{'color': item.type == 1 ? primaryTheme : ''}"
 						>￥{{item.amount}}</view>
 						<view class="bill-time">{{item.time}}</view>
 					</view>
@@ -93,7 +93,7 @@
 		</view>
 		
 		<!-- 悬浮图标 -->
-		<uni-icons class="fixed-icon" type="plus-filled" size="50" :color="$store.getters.primaryColorLive" @click="toPath('/pages/add-bill/add-bill')"></uni-icons>
+		<uni-icons class="fixed-icon" type="plus-filled" size="50" :color="primaryTheme" @click="toPath('/pages/add-bill/add-bill')"></uni-icons>
 		
 		<!-- 侧边栏 -->
 		<Sider ref="sider" :curMonth="curMonth" @change="change" @initBill="initBill"></Sider>
@@ -128,7 +128,16 @@
 				bugetBalance = bugetBalance < 0 ? 0 : bugetBalance
 				const res = (bugetBalance / this.buget) * 100
 				return res + '%'
-			}
+			},
+			theme () {
+				return this.$store.getters.themeLive
+			},
+			colorTheme () {
+				return this.$store.getters.textColorLive
+			},
+			primaryTheme () {
+				return this.$store.getters.primaryColorLive
+			},
 		},
 		onShow() {
 			// this.getData()
@@ -246,7 +255,7 @@
 					.balance-item-title {
 						margin-bottom: 10rpx;
 						font-size: 24rpx;
-						color: var(--theme-gray);
+						color: #ddd;
 					}
 					
 					.balance-item-value {
@@ -278,7 +287,7 @@
 			position: relative;
 			width: 100%;
 			height: 20rpx;
-			background: var(--theme-gray);
+			background: #ddd;
 			margin-top: 20rpx;
 			border-radius: 20rpx;
 			
@@ -309,13 +318,13 @@
 				.bill-list-week {
 					padding-left: 20rpx;
 					font-size: 24rpx;
-					color: #999;
+					color: #ddd;
 				}
 				
 				.bill-list-daybalance {
 					flex: 1;
 					font-size: 24rpx;
-					color: #999;
+					color: #ddd;
 					text-align: right;
 				}
 			}
@@ -325,7 +334,7 @@
 				width: 100%;
 				padding: 30rpx;
 				margin-bottom: 10rpx;
-				border: 1px solid var(--theme-gray);
+				border: 1px solid #ddd;
 				border-radius: 10rpx;
 				
 				.bill-left {
@@ -344,7 +353,7 @@
 						}
 						.bill-type-remark {
 							font-size: 24rpx;
-							color: #999;
+							color: #ddd;
 						}
 					}
 				}
@@ -361,7 +370,7 @@
 					}
 					.bill-time {
 						font-size: 24rpx;
-						color: #999;
+						color: #ddd;
 					}
 				}
 			}

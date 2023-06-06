@@ -122,6 +122,10 @@
 	* {
 		box-sizing: border-box;
 	}
+	view,
+	text {
+		box-sizing: border-box !important;
+	}
 	#app{
 	    padding-top: env(safe-area-inset-top);
 	}

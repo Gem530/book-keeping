@@ -1,11 +1,11 @@
 <template>
 	<view>
 		<uni-popup ref="popup" background-color="#fff" @change="change">
-			<view :class="`popup-content ${$store.getters.themeLive}`">
+			<view :class="['popup-content', theme]">
 				<view class="sider-top"></view>
 				<view class="sider-list">
-					<view class="sider-item" v-for="item in list" :key="item.id" @click="() => item.fun && item.fun()">
-						<uni-icons class="sider-icon" :type="item.icon" size="20" :color="$store.getters.textColorLive"></uni-icons>
+					<view class="sider-item" v-for="item in list" :key="item.id" @click="() => silderClick(item)">
+						<uni-icons class="sider-icon" :type="item.icon" size="20" :color="colorTheme"></uni-icons>
 						<text class="sider-name">{{isType(item.name) == 'function' ? item.name() : item.name}}</text>
 						<zero-switch  v-model="nightShow" v-if="item.id == 1" :size="20" @change="changeBg"></zero-switch>
 					</view>
@@ -80,6 +80,14 @@
 				deep: true
 			}
 		},
+		computed: {
+			theme () {
+				return this.$store.getters.themeLive
+			},
+			colorTheme () {
+				return this.$store.getters.textColorLive
+			}
+		},
 		created() {
 			const that = this
 			// 判断开关按钮显示
@@ -107,6 +115,33 @@
 			isType (val) {
 			  let type = Object.prototype.toString.call(val).replace(']', '').split(' ')[1].toLocaleLowerCase()
 			  return type
+			},
+			silderClick (item) {
+				// #ifdef APP-PLUS || H5
+				item.fun && item.fun()
+				// #endif
+				// #ifdef MP-WEIXIN
+				if (item.id == 2) {
+					uni.navigateTo({ url: '/pages/primary/primary' })
+				}
+				if (item.id == 3) {
+					this.$refs.inputDialog.open('center')
+				}
+				if (item.id == 4) {
+					const that = this
+					uni.showModal({
+						title: '提示',
+						content: '清空账单后，数据无法找回，确认清空账单吗？',
+						success(res) {
+							if (res?.confirm) {
+								uni.clearStorage()
+								uni.showToast({title: '清空账单成功'})
+								that.$emit('initBill')
+							}
+						}
+					})
+				}
+				// #endif
 			},
 			changeBg (value) {
 				this.$store.commit('changeTheme', this.$store.getters.themeLive == 'light' ? 'dark' : 'light')
@@ -164,7 +199,7 @@
 	.sider-top {
 		width: 100%;
 		height: 300rpx;
-		background: url('@/static/sider-bg.jpg') no-repeat;
+		background: url('https://gem530.github.io/static/sider-bg.jpg') no-repeat;
 		background-size: cover;
 		border-radius: 0 0 15rpx 15rpx;
 		overflow: hidden;

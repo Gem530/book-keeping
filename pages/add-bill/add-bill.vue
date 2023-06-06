@@ -1,5 +1,6 @@
 <template>
-	<view :class="`add-bill ${$store.getters.themeLive}`">
+	<view :class="['add-bill', theme]">
+	<!-- <view :class=""> -->
 		<!-- 导航栏 -->
 		<NavBar>
 			<template #center>
@@ -12,9 +13,9 @@
 						}"
 						v-for="item in tabList"
 						@click="changeTab(item)"
-						:style="{color: item.id == tabIndex ? ($store.getters.primaryColorLive + ' !important') : ''}">
+						:style="{color: item.id == tabIndex ? (primaryTheme + ' !important') : ''}">
 						{{item.name}}
-						<view class="tab-active-border" :style="{background: $store.getters.primaryColorLive + ' !important'}"></view>
+						<view class="tab-active-border" :style="{background: primaryTheme + ' !important'}"></view>
 					</view>
 				</view>
 			</template>
@@ -36,14 +37,14 @@
 		<!-- 金额输入框 -->
 		<view class="amount-box">
 			<view class="amount-type">
-				<i :class="`iconfont ${currentAmountType.icon}`" :style="{'color': currentAmountType.color || $store.getters.primaryColorLive}"></i>
+				<i :class="['iconfont', currentAmountType.icon]" :style="{'color': currentAmountType.color || primaryTheme}"></i>
 				<text class="amount-text">{{currentAmountType.name}}</text>
 			</view>
 			<input type="text" class="amount-input" v-model:number.trim="amount" @keyup="mustNumber" focus>
 		</view>
 		<view class="amount-box margin-top">
 			<view class="amount-type">
-				<i :class="`iconfont icon-biaoqian_qiangxianjiuyuan`" :style="{'color': $store.getters.primaryColorLive}"></i>
+				<i class="iconfont icon-biaoqian_qiangxianjiuyuan" :style="{'color': primaryTheme}"></i>
 				<text class="amount-text">备注</text>
 			</view>
 			<input type="text" class="amount-input" placeholder="请输入备注" v-model="remark">
@@ -58,12 +59,12 @@
 				}"
 				v-for="item in currentAmountList"
 				@click="changeBillType(item)">
-				<i :class="`iconfont ${item.icon}`" :style="{'color': item.color || $store.getters.primaryColorLive}"></i>
+				<i :class="['iconfont', item.icon]" :style="{'color': item.color || primaryTheme}"></i>
 				<view class="bill-type-name">{{item.name}}</view>
 			</view>
 		</view>
 		
-		<button class="add-bill-btn" :style="{background: $store.getters.primaryColorLive + ' !important'}" @click="addBill">保存</button>
+		<button class="add-bill-btn" :style="{background: primaryTheme + ' !important'}" @click="addBill">保存</button>
 	</view>
 </template>
 
@@ -89,6 +90,14 @@
 				currentAmountType: { icon: 'icon-biaoqian_canyin', name: '餐饮', color: '' },
 				currentAmountList: [],
 			}
+		},
+		computed: {
+			theme () {
+				return this.$store.getters.themeLive
+			},
+			primaryTheme () {
+				return this.$store.getters.primaryColorLive
+			},
 		},
 		created () {
 			this.currentAmountList = this.$store.state.outputTypeList
@@ -172,7 +181,6 @@
 .add-bill {
 	min-height: 100vh;
 	padding: 30rpx;
-	// background: var(--theme-body-bg);
 	.tab {
 		@include flex();
 		height: 100%;
@@ -202,9 +210,8 @@
 		width: 100%;
 		height: 90rpx;
 		padding: 0 20rpx;
-		border: 1px solid var(--theme-gray);
+		border: 1px solid #ddd;
 		border-radius: 6rpx;
-		// color: var(--theme-text-color);
 		
 		&.margin-top {
 			margin-top: 20rpx;
@@ -224,7 +231,6 @@
 		
 		.amount-input {
 			text-align: right;
-			// color: var(--theme-text-color);
 		}
 	}
 	
@@ -240,7 +246,7 @@
 			border-radius: 10rpx;
 			
 			&.bill-type-item-acitve {
-				background: var(--theme-gray);
+				background: #ddd;
 			}
 			
 			.iconfont {
@@ -250,13 +256,11 @@
 			
 			.bill-type-name {
 				font-size: 26rpx;
-				// color: var(--theme-text-color);
 			}
 		}
 	}
 	
 	.add-bill-btn {
-		// background: var(--theme-primary);
 		border: 1rpx solid transparent;
 		color: #fff;
 	}

@@ -6,7 +6,8 @@
 				"navigationBarTitleText": "uni-app"
 			}
 		}
-        ,{
+        ,
+		{
             "path" : "pages/add-bill/add-bill",
             "style" :                                                                                    
             {
@@ -29,23 +30,21 @@
                 "enablePullDownRefresh": false
 			}
 		}
-		,{
-			"path": "pages/statistics/statistics",
-			"style": {
-                "navigationBarTitleText": "",
-                "enablePullDownRefresh": false
-			}
-		}
-        ,{
-            "path" : "component/echart/echart",
-            "style" :                                                                                    
-            {
-                "navigationBarTitleText": "",
-                "enablePullDownRefresh": false
-            }
-            
-        }
     ],
+	"subPackages": [
+		{
+			"root": "pageSub",
+			"pages": [
+				{
+					"path": "pages/statistics/statistics",
+					"style": {
+						"navigationBarTitleText": "",
+						"enablePullDownRefresh": false
+					}
+				}
+			]
+		}
+	],
 	"globalStyle": {
 		"navigationStyle": "custom"
 		// "navigationBarTextStyle": "black",

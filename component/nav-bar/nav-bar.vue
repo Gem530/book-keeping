@@ -1,8 +1,11 @@
 <template>
 	<view>
-		<view :class="`nav-bar ${$store.getters.themeLive}`" :style="{height: statusBarHeight + baseHeight + 'rpx',paddingTop: statusBarHeight + 'rpx'}">
+		<!-- #ifdef MP-WEIXIN -->
+		<view class="position-head" :style="{height: statusBarHeight + 'rpx'}"></view>
+		<!-- #endif -->
+		<view :class="['nav-bar', theme]" :style="{height: statusBarHeight + baseHeight + 'rpx',paddingTop: statusBarHeight + 'rpx'}">
 			<view class="nav-left">
-				<slot name="left"><uni-icons type="back" size="20" @click="toBack"  :color="$store.getters.textColorLive"></uni-icons></slot>
+				<slot name="left"><uni-icons type="back" size="20" @click="toBack"  :color="colorTheme"></uni-icons></slot>
 			</view>
 			<view class="nav-center"><slot name="center">{{title}}</slot></view>
 			<view class="nav-right"><slot name="right"></slot></view>
@@ -20,6 +23,14 @@
 				default: ''
 			}
 		},
+		computed: {
+			theme () {
+				return this.$store.getters.themeLive
+			},
+			colorTheme () {
+				return this.$store.getters.textColorLive
+			}
+		},
 		data() {
 			return {
 				baseHeight: 92,
@@ -29,6 +40,10 @@
 		created() {
 			const { statusBarHeight } = uni.getSystemInfoSync()
 			this.statusBarHeight = document ? statusBarHeight : statusBarHeight + 20
+			// #ifdef MP-WEIXIN
+			const res = wx.getMenuButtonBoundingClientRect()
+			this.statusBarHeight += (res.top + res.height + 30)
+			// #endif
 		},
 		methods: {
 			toBack () {
@@ -39,6 +54,14 @@
 </script>
 
 <style lang="scss" scoped>
+.position-head {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	background: #000;
+	z-index: 11;
+}
 .nav-bar {
 	position: fixed;
 	top: 0;
@@ -62,6 +85,9 @@
 		// color: var(--theme-text-color);
 	}
 	
+	.nav-center {
+		flex: 2;
+	}
 	.nav-left {
 		justify-content: flex-start;
 	}

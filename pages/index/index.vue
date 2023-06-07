@@ -69,7 +69,8 @@
 				<view
 					:key="item.id"
 					class="bill-item"
-					v-for="item in el.list">
+					v-for="item in el.list"
+					@click="() => delBill(item)">
 					<view class="bill-left">
 						<i :class="['iconfont', item.amountType.icon]" :style="{'color': item.amountType.color || primaryTheme}"></i>
 						<view class="bill-left-type">
@@ -214,6 +215,44 @@
 			},
 			toPath (v) {
 				uni.navigateTo({url: v})
+			},
+			delBill (v) {
+				const that = this
+				console.log(v)
+				uni.showModal({
+					title: '提示',
+					content: '确认删除当前账单吗？',
+					success(res) {
+						if (res?.confirm) {
+							const storgeKey = 'bill:' + dayjs(v.time).format('YYYY-MM')
+							let resData = null
+							uni.getStorage({
+								key: storgeKey,
+								success(res) {
+									const data = JSON.parse(res.data)
+									const index = data.list.findIndex(el => el.createdTime == v.createdTime && el.amount == v.amount)
+									data.list.splice(index, 1)
+									console.log(data)
+									
+									uni.setStorage({
+										key: storgeKey,
+										data: JSON.stringify(data),
+										success() {
+											uni.showToast({title: '删除成功'})
+											that.initBill()
+										},
+										fail() {
+											uni.showToast({title: '删除失败'})
+										}
+									})
+								},
+								fail() {
+									uni.showToast({title: '删除失败'})
+								}
+							})
+						}
+					}
+				})
 			}
 		}
 	}

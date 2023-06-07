@@ -89,6 +89,7 @@
 </script>
 
 <script module="echarts" lang="renderjs">
+	// 引入cdn的echarts包
 	let myChart
 	export default {
 		async mounted() {

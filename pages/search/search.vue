@@ -207,6 +207,8 @@
 					if (v.type === 1) that.monthIncome += v.amount
 					else that.monthOutput += v.amount
 				})
+				that.monthIncome = (that.monthIncome * 100) / 100
+				that.monthOutput = (that.monthOutput * 100) / 100
 				
 				// 按照日期排序
 				const dateList = [
@@ -218,6 +220,7 @@
 					if (index != -1) {
 						dateList[index].list.push(v)
 						dateList[index].daybalance += v.amount
+						dateList[index].daybalance = (dateList[index].daybalance * 100) / 100
 					} else {
 						dateList.push({ date, daybalance: v.amount, list: [v] })
 					}

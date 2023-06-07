@@ -255,6 +255,7 @@
 					const index = dayList.findIndex(el => that.formatDate(el.time, that.yOrM ? '' : 'YYYY-MM') == that.formatDate(v.time, that.yOrM ? '' : 'YYYY-MM'))
 					if (index !== -1) {
 						dayList[index][v.type == 1 ? 'income' : 'output'] += v.amount
+						dayList[index][v.type == 1 ? 'income' : 'output'] = (dayList[index][v.type == 1 ? 'income' : 'output'] * 100) / 100
 					} else {
 						dayList.push({
 							time: that.formatDate(v.time,  that.yOrM ? '' : 'YYYY-MM'),
@@ -263,6 +264,8 @@
 						})
 					}
 				})
+				that.monthIncome = (that.monthIncome * 100) / 100
+				that.monthOutput = (that.monthOutput * 100) / 100
 				
 				// 日期排序
 				dayList.sort((a, b) => { return (that.getTimeStr(b.time) - that.getTimeStr(a.time)) })
@@ -321,6 +324,7 @@
 					const index = pies.findIndex(el => el.name == v.amountType.name)
 					if (index != -1) {
 						pies[index].value += Math.abs(v.amount)
+						pies[index].value = (pies[index].value * 100) / 100
 						pies[index].num += 1
 					} else {
 						pies.push({

@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "dayjs": "^1.11.7",
+    "jsencrypt": "^3.3.2",
     "vuex": "^4.1.0"
   }
 }

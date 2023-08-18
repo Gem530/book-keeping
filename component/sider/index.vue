@@ -29,9 +29,12 @@
 		},
 		data() {
 			return {
+				db: uniCloud.database(),
 				buget: 0,
 				currentSize: '0kb',
 				nightShow: false,
+				startTime: undefined,
+				endTime: undefined,
 				list: [
 					{ icon: 'circle', name: '夜间', id: 1 },
 					{ icon: 'color', name: '主题色', id: 2, fun: () => {
@@ -45,16 +48,16 @@
 						},
 					},
 					{ icon: 'trash', name: () => {
-						return '清空账单:' + this.currentSize
+						return '退出并清空数据:' + this.currentSize
 					}, id: 4, fun: () => {
 							const that = this
 							uni.showModal({
 								title: '提示',
-								content: '清空账单后，数据无法找回，确认清空账单吗？',
+								content: '清空数据后，数据无法找回，确认清空吗？',
 								success(res) {
 									if (res?.confirm) {
 										uni.clearStorage()
-										uni.showToast({title: '清空账单成功'})
+										uni.showToast({title: '清空数据成功'})
 										that.$emit('initBill')
 									}
 								}
@@ -69,11 +72,20 @@
 				handler (val) {
 					const that = this
 					const curDate = dayjs(that.curMonth).format('YYYY-MM')
-					uni.getStorage({
-						key: 'bill:' + curDate,
-						success(res) {
-							that.buget = JSON.parse(res.data).buget
-						}
+					// console.log(curDate)
+					const yAndM = curDate.toString().split('-')
+					let endDate = this.getMonthDay(yAndM[0], yAndM[1])
+					endDate = endDate < 10 ? '0' + endDate: endDate
+					that.startTime = new Date(curDate+'-01 00:00:00').getTime()
+					that.endTime = new Date(curDate+'-'+endDate+' 23:59:59').getTime()
+					
+					this.db.collection('buget').where({
+						userId: this.id,
+						time: that.db.command.gte(that.startTime)
+							.and(that.db.command.lte(that.endTime))
+					}).get().then(res => {
+						// console.log(res)
+						that.buget = res.result.data.length ? res.result.data[0].buget : 0
 					})
 				},
 				immediate: true,
@@ -81,6 +93,9 @@
 			}
 		},
 		computed: {
+			id () {
+				return this.$store.getters.idLive
+			},
 			theme () {
 				return this.$store.getters.themeLive
 			},
@@ -109,6 +124,10 @@
 			})
 		},
 		methods: {
+			getMonthDay(year, month) {
+			  let days = new Date(year, Number(month), 0).getDate()
+			  return days
+			},
 			change (e) {
 				this.$emit('change', e)
 			},
@@ -131,11 +150,11 @@
 					const that = this
 					uni.showModal({
 						title: '提示',
-						content: '清空账单后，数据无法找回，确认清空账单吗？',
+						content: '清空数据后，数据无法找回，确认清空吗？',
 						success(res) {
 							if (res?.confirm) {
 								uni.clearStorage()
-								uni.showToast({title: '清空账单成功'})
+								uni.showToast({title: '清空数据成功'})
 								that.$emit('initBill')
 							}
 						}
@@ -155,36 +174,74 @@
 				that.buget = val
 				that.$refs.inputDialog.close()
 				
-				const curDate = dayjs(that.curMonth).format('YYYY-MM')
-				uni.getStorage({
-					key: 'bill:' + curDate,
-					success(res) {
-						const data = JSON.parse(res.data)
-						data.buget = that.buget
-						uni.setStorage({
-							key: 'bill:' + curDate,
-							data: JSON.stringify(data),
-							success() {
-								uni.showToast({title:'操作成功'})
-								that.$emit('initBill')
-							}
+				// const curDate = dayjs(that.curMonth).format('YYYY-MM')
+					
+				this.db.collection('buget').where({
+					userId: this.id,
+					time: that.db.command.gte(that.startTime)
+						.and(that.db.command.lte(that.endTime))
+				}).get().then(res => {
+					// console.log(res)
+					// that.buget = res.result.data.length ? res.result.data[0].buget : 0
+					if (res.result.data.length) {
+						// 修改预算
+						this.db.collection('buget').where({
+							userId: this.id,
+							time: that.db.command.gte(that.startTime)
+								.and(that.db.command.lte(that.endTime))
+						}).update({
+							userId: this.id,
+							time: that.startTime,
+							buget: that.buget
+						}).then(res => {
+							uni.showToast({title: '修改预算成功'})
+							this.$emit('initBuget')
+						}).catch(() => {
+							uni.showToast({title: '修改预算失败'})
 						})
-					},
-					fail() {
-						const info = {
-							buget: that.buget,
-							list: []
-						}
-						uni.setStorage({
-							key: 'bill:' + curDate,
-							data: JSON.stringify(info),
-							success() {
-								uni.showToast({title:'操作成功'})
-								that.$emit('initBill')
-							}
+					} else {
+						// 添加预算
+						this.db.collection('buget').add({
+							userId: this.id,
+							time: that.startTime,
+							buget: that.buget
+						}).then(res => {
+							uni.showToast({title: '添加预算成功'})
+							this.$emit('initBuget')
+						}).catch(() => {
+							uni.showToast({title: '添加预算失败'})
 						})
 					}
 				})
+				// uni.getStorage({
+				// 	key: 'bill:' + curDate,
+				// 	success(res) {
+				// 		const data = JSON.parse(res.data)
+				// 		data.buget = that.buget
+				// 		uni.setStorage({
+				// 			key: 'bill:' + curDate,
+				// 			data: JSON.stringify(data),
+				// 			success() {
+				// 				uni.showToast({title:'操作成功'})
+				// 				that.$emit('initBill')
+				// 			}
+				// 		})
+				// 	},
+				// 	fail() {
+				// 		const info = {
+				// 			buget: that.buget,
+				// 			list: []
+				// 		}
+				// 		uni.setStorage({
+				// 			key: 'bill:' + curDate,
+				// 			data: JSON.stringify(info),
+				// 			success() {
+				// 				uni.showToast({title:'操作成功'})
+				// 				that.$emit('initBill')
+				// 			}
+				// 		})
+				// 	}
+				// })
 			}
 		}
 	}

@@ -8,6 +8,14 @@
 		}
         ,
 		{
+			"path": "pages/login/index",
+			"style": {
+                "navigationBarTitleText": "",
+                "enablePullDownRefresh": false
+			}
+		}
+        ,
+		{
             "path" : "pages/add-bill/add-bill",
             "style" :                                                                                    
             {

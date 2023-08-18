@@ -79,6 +79,7 @@
 		},
 		data() {
 			return {
+				db: uniCloud.database(),
 				amount: '',
 				remark: '',
 				tabIndex: 2,
@@ -92,6 +93,9 @@
 			}
 		},
 		computed: {
+			id () {
+				return this.$store.getters.idLive
+			},
 			theme () {
 				return this.$store.getters.themeLive
 			},
@@ -134,44 +138,51 @@
 					return
 				}
 				const params = {
-					time: this.curMonth,
+					time: new Date(this.curMonth).getTime(),
 					type: this.tabIndex, // 1收入 2支出
+					userId: this.id,
 					amount: this.tabIndex == 2 ? -this.amount : this.amount,
 					remark: this.remark,
 					amountType: this.currentAmountType,
-					createdTime: dayjs(new Date()).format('YYYY-MM-DD HH:mm:ss')
+					// createdTime: dayjs(new Date()).format('YYYY-MM-DD HH:mm:ss')
 				}
 				
-				const curDate = dayjs(this.curMonth).format('YYYY-MM')
-				uni.getStorage({
-					key: 'bill:' + curDate,
-					success(res) {
-						const data = JSON.parse(res.data)
-						data.list.push(params)
-						uni.setStorage({
-							key: 'bill:' + curDate,
-							data: JSON.stringify(data),
-							success() {
-								uni.showToast({title:'添加成功'})
-								uni.navigateBack({delta: 1})
-							}
-						})
-					},
-					fail() {
-						const info = {
-							buget: 0,
-							list: [params]
-						}
-						uni.setStorage({
-							key: 'bill:' + curDate,
-							data: JSON.stringify(info),
-							success() {
-								uni.showToast({title:'添加成功'})
-								uni.navigateBack({delta: 1})
-							}
-						})
-					}
+				this.db.collection('bill').add(params).then(res => {
+					uni.showToast({title:'保存成功'})
+					uni.navigateBack()
+				}).catch(() => {
+					uni.showToast({icon:'error',title:'保存失败'})
 				})
+				// const curDate = dayjs(this.curMonth).format('YYYY-MM')
+				// uni.getStorage({
+				// 	key: 'bill:' + curDate,
+				// 	success(res) {
+				// 		const data = JSON.parse(res.data)
+				// 		data.list.push(params)
+				// 		uni.setStorage({
+				// 			key: 'bill:' + curDate,
+				// 			data: JSON.stringify(data),
+				// 			success() {
+				// 				uni.showToast({title:'添加成功'})
+				// 				uni.navigateBack({delta: 1})
+				// 			}
+				// 		})
+				// 	},
+				// 	fail() {
+				// 		const info = {
+				// 			buget: 0,
+				// 			list: [params]
+				// 		}
+				// 		uni.setStorage({
+				// 			key: 'bill:' + curDate,
+				// 			data: JSON.stringify(info),
+				// 			success() {
+				// 				uni.showToast({title:'添加成功'})
+				// 				uni.navigateBack({delta: 1})
+				// 			}
+				// 		})
+				// 	}
+				// })
 			}
 		}
 	}

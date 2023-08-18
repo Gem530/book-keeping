@@ -60,6 +60,7 @@
 	left: 0;
 	width: 100%;
 	background: #000;
+	opacity: 0.5;
 	z-index: 11;
 }
 .nav-bar {

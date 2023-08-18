@@ -249,8 +249,8 @@
 				tempList.sort((a,b)=> { return Math.abs(b.amount) - Math.abs(a.amount) })
 				tempList.forEach((v) => {
 					// 计算总收入和总支出
-					if (v.type === 1) that.monthIncome += v.amount
-					else that.monthOutput += v.amount
+					if (v.type === 1) that.monthIncome += Number(v.amount)
+					else that.monthOutput += Number(v.amount)
 					
 					const index = dayList.findIndex(el => that.formatDate(el.time, that.yOrM ? '' : 'YYYY-MM') == that.formatDate(v.time, that.yOrM ? '' : 'YYYY-MM'))
 					if (index !== -1) {

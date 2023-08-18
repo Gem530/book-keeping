@@ -22,7 +22,8 @@
         },
         /* 模块配置 */
         "modules" : {
-            "Fingerprint" : {}
+            "Fingerprint" : {},
+            "OAuth" : {}
         },
         /* 应用发布信息 */
         "distribute" : {
@@ -48,17 +49,30 @@
             },
             /* ios打包配置 */
             "ios" : {
-                "dSYMs" : false
+                "dSYMs" : false,
+                "capabilities" : {
+                    "entitlements" : {
+                        "com.apple.developer.associated-domains" : [
+                            "applinks:static-mp-13321bb4-bfdf-4168-bca8-3d97f4e33a88.next.bspapp.com"
+                        ]
+                    }
+                }
             },
             /* SDK配置 */
             "sdkConfigs" : {
                 "ad" : {},
-                "oauth" : {},
+                "oauth" : {
+                    "weixin" : {
+                        "appid" : "wxfac328c3ee26f0d2",
+                        "UniversalLinks" : "https://static-mp-13321bb4-bfdf-4168-bca8-3d97f4e33a88.next.bspapp.com/uni-universallinks/__UNI__2D47213/"
+                    },
+                    "univerify" : {}
+                },
                 "push" : {},
                 "share" : {}
             },
             "splashscreen" : {
-                "androidStyle" : "default",
+                "androidStyle" : "common",
                 "android" : {
                     "hdpi" : "C:/Users/Administrator/Downloads/裁剪-PHOTO.png",
                     "xhdpi" : "C:/Users/Administrator/Downloads/裁剪-PHOTO (1).png",
@@ -162,5 +176,6 @@
         "router" : {
             "base" : "./"
         }
-    }
+    },
+    "_spaceID" : "mp-13321bb4-bfdf-4168-bca8-3d97f4e33a88"
 }

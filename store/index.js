@@ -5,6 +5,7 @@ Vue.use(Vuex)
 
 const store = new Vuex.Store({
 	state: {
+		id: undefined,
 		theme: 'light',
 		textColor: '#333',
 		bodyBg: '#fff',
@@ -28,6 +29,9 @@ const store = new Vuex.Store({
 		]
 	},
 	getters: {
+		idLive (state) {
+			return state.id
+		},
 		themeLive (state) {
 			return state.theme
 		},
@@ -42,6 +46,9 @@ const store = new Vuex.Store({
 		},
 	},
 	mutations: {
+		changeId (state, id) {
+			state.id = id
+		},
 		changeTheme (state, theme) {
 			state.theme = theme
 			if (state.theme == 'light') {

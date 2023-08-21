@@ -141,16 +141,18 @@
 					time: new Date(this.curMonth).getTime(),
 					type: this.tabIndex, // 1收入 2支出
 					userId: this.id,
-					amount: this.tabIndex == 2 ? -this.amount : this.amount,
+					amount: Number(this.tabIndex == 2 ? -this.amount : this.amount),
 					remark: this.remark,
 					amountType: this.currentAmountType,
 					// createdTime: dayjs(new Date()).format('YYYY-MM-DD HH:mm:ss')
 				}
-				
+				uni.showLoading({ title: '保存中' })
 				this.db.collection('bill').add(params).then(res => {
+					uni.hideLoading()
 					uni.showToast({title:'保存成功'})
 					uni.navigateBack()
 				}).catch(() => {
+					uni.hideLoading()
 					uni.showToast({icon:'error',title:'保存失败'})
 				})
 				// const curDate = dayjs(this.curMonth).format('YYYY-MM')

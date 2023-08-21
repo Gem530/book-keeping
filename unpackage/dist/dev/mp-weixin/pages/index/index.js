@@ -432,11 +432,13 @@ var _default = {
       .get().then(function (res) {
         var data = res.result.data;
         var tempList = data;
+        console.log(data);
 
         // 按照日期排序
         var dateList = [
           // { date: 'xxxx-xx-xx', daybalance: 0, list: [] }
         ];
+        if (!data.length) return;
         tempList.map(function (v) {
           // 计算总收入和总支出
           if (v.type === 1) that.monthIncome += Number(v.amount);else that.monthOutput += Number(v.amount);
@@ -458,7 +460,7 @@ var _default = {
           }
         });
         that.billList = dateList;
-        console.log(data, that.billList);
+        // console.log(data, that.billList)
       });
 
       // uni.getStorage({
@@ -509,6 +511,7 @@ var _default = {
     changeDatetimePicker: function changeDatetimePicker(date) {
       this.curMonth = "".concat(date.YYYY, "-").concat(date.MM, "-").concat(date.DD, " ").concat(date.hh, ":").concat(date.mm);
       this.initBill();
+      this.initBuget();
     },
     formatDate: function formatDate(value, format) {
       var res = (0, _dayjs.default)(value).format(format);

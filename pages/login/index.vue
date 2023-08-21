@@ -72,9 +72,7 @@
 					uni.showToast({icon:'error',title:'请输入账号和密码！'})
 					return
 				}
-				uni.showLoading({
-					title: '加载中'
-				})
+				uni.showLoading({ title: '加载中' })
 				this.db.collection('user').where({phone: this.phone}).get().then(res => {
 					const data= res.result.data
 					uni.hideLoading()

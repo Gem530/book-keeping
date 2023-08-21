@@ -104,9 +104,9 @@
 				class="statistics-body"
 				v-for="item in dayStatistics">
 				<div class="statistics-body-item time">{{formatDate(item.time, yOrM ? 'MM-DD' : 'YYYY-MM')}}</div>
-				<div class="statistics-body-item">{{item.income ? '￥'+item.income : '-'}}</div>
-				<div class="statistics-body-item">{{item.output ? '￥'+item.output : '-'}}</div>
-				<div class="statistics-body-item">￥{{item.income - Math.abs(item.output)}}</div>
+				<div class="statistics-body-item">{{item.income ? '￥'+(item.income * 100) / 100 : '-'}}</div>
+				<div class="statistics-body-item">{{item.output ? '￥'+(item.output * 100) / 100 : '-'}}</div>
+				<div class="statistics-body-item">￥{{(item.income - Math.abs(item.output)) * 100 / 100}}</div>
 			</div>
 		</view>
 		
@@ -128,8 +128,8 @@
 					<view
 						:class="['bill-amount',  item.type == 1 ? '' : 'red']"
 						:style="{'color': item.type == 1 ? primaryTheme : ''}"
-					>￥{{item.amount}}</view>
-					<view class="bill-time">{{item.time}}</view>
+					>￥{{(item.amount * 100) / 100}}</view>
+					<view class="bill-time">{{formatDate(item.time, 'YYYY-MM-DD HH:mm')}}</view>
 				</view>
 			</view>
 		</view>
@@ -152,6 +152,9 @@
 			BiaofunDatetimePicker,
 		},
 		computed: {
+			id () {
+				return this.$store.getters.idLive
+			},
 			theme () {
 				return this.$store.getters.themeLive
 			},
@@ -161,15 +164,18 @@
 		},
 		data() {
 			return {
+				db: uniCloud.database(),
 				type: 'output', // 类型 收入/支出
 				yOrM: true, // true 为月份 false 为年份
 				average: 0, // 日均额
+				endTime: undefined,
 				allBill: [], // 所有账单信息
 				billList: [], // 当前类型的账单
+				startTime: undefined,
 				monthIncome: 0, // 总收入
 				monthOutput: 0, // 总支出
 				dayStatistics: [], // 日账单统计
-				curMonth: dayjs(new Date()).format('YYYY-MM-DD HH:mm'), // 当前选择时间
+				curMonth: dayjs(new Date()).format('YYYY-MM-DD HH:mm:ss'), // 当前选择时间
 				
 				// echarts数据
 				pieList: [],
@@ -182,7 +188,7 @@
 		async onLoad(option) {
 			// console.log(option)
 			this.type = option.type
-			await this.getData()
+			// await this.getData()
 			this.initBill()
 		},
 		methods: {
@@ -194,154 +200,292 @@
 			getTimeStr(v) {
 				return new Date(v).getTime()
 			},
+			getMonthDay(year, month) {
+			  let days = new Date(year, Number(month), 0).getDate()
+			  return days
+			},
 			formatDate (value, format) {
 				const res = dayjs(value).format(format || 'YYYY-MM-DD')
 				return res
 			},
-			getData () {
-				return new Promise((resolve, reject) => {
-					const that = this
-					uni.getStorageInfo({
-						success(res) {
-							const keys = res.keys.filter(v => v.includes('bill:'))
-							let list = []
-							for (let i = 0; i < keys.length; i++) {
-								const data = JSON.parse(uni.getStorageSync(keys[i]))
-								list = list.concat(data.list)
-							}
-							list.sort((a,b)=> { return (that.getTimeStr(b.time) - that.getTimeStr(a.time)) })
-							that.allBill = list
-							resolve(true)
-						},
-						fail() {
-							reject(false)
-						}
-					})
-				})
-			},
+			// getData () {
+			// 	return new Promise((resolve, reject) => {
+			// 		const that = this
+			// 		uni.getStorageInfo({
+			// 			success(res) {
+			// 				const keys = res.keys.filter(v => v.includes('bill:'))
+			// 				let list = []
+			// 				for (let i = 0; i < keys.length; i++) {
+			// 					const data = JSON.parse(uni.getStorageSync(keys[i]))
+			// 					list = list.concat(data.list)
+			// 				}
+			// 				list.sort((a,b)=> { return (that.getTimeStr(b.time) - that.getTimeStr(a.time)) })
+			// 				that.allBill = list
+			// 				resolve(true)
+			// 			},
+			// 			fail() {
+			// 				reject(false)
+			// 			}
+			// 		})
+			// 	})
+			// },
 			initBill () {
 				const that = this
-				const curDate = dayjs(that.curMonth).format(this.yOrM ? 'YYYY-MM' : 'YYYY')
+				const curDate = dayjs(this.curMonth).format(this.yOrM ? 'YYYY-MM' : 'YYYY')
+				// console.log(curDate)
+				const yAndM = curDate.toString().split('-')
+				let endDate = this.getMonthDay(yAndM[0], yAndM[1])
+				endDate = endDate < 10 ? '0' + endDate: endDate
+				that.startTime = new Date(curDate+(this.yOrM ? '-01 00:00:00' : '-01-01 00:00:00')).getTime()
+				that.endTime = new Date(curDate+(this.yOrM ? '-'+endDate+' 23:59:59' : '-12-31 23:59:59')).getTime()
 				that.monthIncome = 0
 				that.monthOutput = 0
-				that.pieList = []
-				that.dateList = []
-				that.valueList = []
 				
-				let tempList = that.allBill.filter(v => {
-					const curTime = that.getTimeStr(v.time)
-					const res = (
-						// 时间 搜索
-						v.time.includes(curDate)
-					)
-					return res
+				const dbcmd = that.db.command
+				this.db.collection('bill').where({
+					userId: this.id,
+					time: dbcmd.gte(that.getTimeStr(that.startTime))
+						.and(dbcmd.lte(that.getTimeStr(that.endTime)))
 				})
-				
-				// 日账单统计
-				let dayList = [
-					// { time: 'xxxx-xx-xx', income: 0, output: 0 }
-				]
-				
-				// if (tempList.length) {
-				// // 按照日期排序
-				// tempList.sort((a,b)=> { return (that.getTimeStr(b.time) - that.getTimeStr(a.time)) })
-				// // 按照金额大小排序
-				tempList.sort((a,b)=> { return Math.abs(b.amount) - Math.abs(a.amount) })
-				tempList.forEach((v) => {
-					// 计算总收入和总支出
-					if (v.type === 1) that.monthIncome += Number(v.amount)
-					else that.monthOutput += Number(v.amount)
+				.orderBy('time', 'desc') // 1字段排序的字段 2字段排序的顺序，升序(asc) 或 降序(desc)
+				.get().then((res) => {
+					const data = res.result.data
+					let tempList = data
 					
-					const index = dayList.findIndex(el => that.formatDate(el.time, that.yOrM ? '' : 'YYYY-MM') == that.formatDate(v.time, that.yOrM ? '' : 'YYYY-MM'))
-					if (index !== -1) {
-						dayList[index][v.type == 1 ? 'income' : 'output'] += v.amount
-						dayList[index][v.type == 1 ? 'income' : 'output'] = (dayList[index][v.type == 1 ? 'income' : 'output'] * 100) / 100
-					} else {
-						dayList.push({
-							time: that.formatDate(v.time,  that.yOrM ? '' : 'YYYY-MM'),
-							income: v.type == 1 ? v.amount : 0,
-							output: v.type == 1 ? 0 : v.amount,
-						})
-					}
-				})
-				that.monthIncome = (that.monthIncome * 100) / 100
-				that.monthOutput = (that.monthOutput * 100) / 100
-				
-				// 日期排序
-				dayList.sort((a, b) => { return (that.getTimeStr(b.time) - that.getTimeStr(a.time)) })
-				this.dayStatistics = dayList
-				
-				const type = that.type == 'income' ? 1 : 2
-				tempList = tempList.filter(v => v.type == type)
-				
-				const tempTime = tempList.length ? tempList[0].time : that.curMonth
-				const day = dayjs(tempTime).format('D')
-				that.average = (Math.abs(that.type == 'income' ? (that.monthIncome / day) : (that.monthOutput / day))).toFixed(2)
-				
-				// 折线图
-				if (this.yOrM) {
-					const curMonth = dayjs(tempTime).format('YYYY-MM')
-					const days = that.getCurMonthDay(curMonth)
-					for (let i = 1; i <= days; i++) {
-						const curDay = curMonth + '-' + (i < 10 ? ('0' + i) : i)
-						that.dateList.push(curDay)
-						that.valueList.push(0)
-						tempList.forEach((v) => {
-							if (dayjs(v.time).format('YYYY-MM-DD') == curDay) {
-								if (that.valueList[i - 1]) {
-									that.valueList.splice(i - 1, 1, Math.abs(v.amount) + that.valueList[i - 1])
-								} else {
-									that.valueList.splice(i - 1, 1, Math.abs(v.amount))
+					that.pieList = []
+					that.dateList = []
+					that.valueList = []
+					
+					// 日账单统计
+					let dayList = [
+						// { time: 'xxxx-xx-xx', income: 0, output: 0 }
+					]
+					if (!data.length) return
+					
+					// if (tempList.length) {
+					// // 按照日期排序
+					// tempList.sort((a,b)=> { return (that.getTimeStr(b.time) - that.getTimeStr(a.time)) })
+					// // 按照金额大小排序
+					tempList.sort((a,b)=> { return Math.abs(b.amount) - Math.abs(a.amount) })
+					tempList.forEach((v) => {
+						// 计算总收入和总支出
+						if (v.type === 1) that.monthIncome += Number(v.amount)
+						else that.monthOutput += Number(v.amount)
+						
+						// 月/日账单统计
+						const index = dayList.findIndex(el => that.formatDate(el.time, that.yOrM ? '' : 'YYYY-MM') == that.formatDate(v.time, that.yOrM ? '' : 'YYYY-MM'))
+						if (index !== -1) {
+							dayList[index][v.type == 1 ? 'income' : 'output'] += Number(v.amount)
+							dayList[index][v.type == 1 ? 'income' : 'output'] = (Number(dayList[index][v.type == 1 ? 'income' : 'output']) * 100) / 100
+						} else {
+							dayList.push({
+								time: that.formatDate(v.time,  that.yOrM ? '' : 'YYYY-MM'),
+								income: v.type == 1 ? Number(v.amount) : 0,
+								output: v.type == 1 ? 0 : Number(v.amount),
+							})
+						}
+					})
+					that.monthIncome = (that.monthIncome * 100) / 100
+					that.monthOutput = (that.monthOutput * 100) / 100
+					
+					// 日期排序
+					dayList.sort((a, b) => { return (that.getTimeStr(b.time) - that.getTimeStr(a.time)) })
+					this.dayStatistics = dayList
+					
+					const type = that.type == 'income' ? 1 : 2
+					tempList = tempList.filter(v => v.type == type)
+					
+					const tempTime = tempList.length ? tempList[0].time : that.curMonth
+					const day = dayjs(tempTime).format('D')
+					that.average = (Math.abs(that.type == 'income' ? (that.monthIncome / day) : (that.monthOutput / day))).toFixed(2)
+					
+					// 折线图
+					if (this.yOrM) {
+						const curMonth = dayjs(tempTime).format('YYYY-MM')
+						const days = that.getCurMonthDay(curMonth)
+						for (let i = 1; i <= days; i++) {
+							const curDay = curMonth + '-' + (i < 10 ? ('0' + i) : i)
+							that.dateList.push(curDay)
+							that.valueList.push(0)
+							tempList.forEach((v) => {
+								if (dayjs(v.time).format('YYYY-MM-DD') == curDay) {
+									if (that.valueList[i - 1]) {
+										that.valueList.splice(i - 1, 1, Math.abs(v.amount) + that.valueList[i - 1])
+									} else {
+										that.valueList.splice(i - 1, 1, Math.abs(v.amount))
+									}
 								}
-							}
-						})
-					}
-					that.initLine()
-				} else {
-					const curYear = dayjs(tempTime).format('YYYY')
-					for (let i = 1; i <= 12; i++) {
-						const curMonth = curYear + '-' + (i < 10 ? ('0' + i) : i)
-						that.dateList.push(curMonth)
-						that.valueList.push(0)
-						tempList.forEach((v) => {
-							if (dayjs(v.time).format('YYYY-MM') == curMonth) {
-								if (that.valueList[i - 1]) {
-									that.valueList.splice(i - 1, 1, Math.abs(v.amount) + that.valueList[i - 1])
-								} else {
-									that.valueList.splice(i - 1, 1, Math.abs(v.amount))
-								}
-							}
-						})
-					}
-					that.initLine()
-				}
-				
-				// 饼状图
-				const pies = [
-					// { value: 0, name: '餐饮' }
-				]
-				tempList.map((v) => {
-					const index = pies.findIndex(el => el.name == v.amountType.name)
-					if (index != -1) {
-						pies[index].value += Math.abs(v.amount)
-						pies[index].value = (pies[index].value * 100) / 100
-						pies[index].num += 1
+							})
+						}
+						that.initLine()
 					} else {
-						pies.push({
-							value: Math.abs(v.amount),
-							name: v.amountType.name,
-							amountType: v.amountType,
-							num: 1
-						})
+						const curYear = dayjs(tempTime).format('YYYY')
+						for (let i = 1; i <= 12; i++) {
+							const curMonth = curYear + '-' + (i < 10 ? ('0' + i) : i)
+							that.dateList.push(curMonth)
+							that.valueList.push(0)
+							tempList.forEach((v) => {
+								if (dayjs(v.time).format('YYYY-MM') == curMonth) {
+									if (that.valueList[i - 1]) {
+										that.valueList.splice(i - 1, 1, Math.abs(v.amount) + that.valueList[i - 1])
+									} else {
+										that.valueList.splice(i - 1, 1, Math.abs(v.amount))
+									}
+								}
+							})
+						}
+						that.initLine()
 					}
+					
+					// 饼状图
+					const pies = [
+						// { value: 0, name: '餐饮' }
+					]
+					tempList.map((v) => {
+						const index = pies.findIndex(el => el.name == v.amountType.name)
+						if (index != -1) {
+							pies[index].value += Math.abs(Number(v.amount))
+							pies[index].value = (pies[index].value * 100) / 100
+							pies[index].num += 1
+						} else {
+							pies.push({
+								value: Math.abs(v.amount),
+								name: v.amountType.name,
+								amountType: v.amountType,
+								num: 1
+							})
+						}
+					})
+					pies.sort((a,b)=> { return b.value - a.value })
+					this.pieList = pies
+					this.initPie()
+					
+					that.billList = tempList
+					// console.log(that.billList)
+					// }
 				})
-				pies.sort((a,b)=> { return b.value - a.value })
-				this.pieList = pies
-				this.initPie()
+				// const that = this
+				// const curDate = dayjs(that.curMonth).format(this.yOrM ? 'YYYY-MM' : 'YYYY')
+				// that.monthIncome = 0
+				// that.monthOutput = 0
+				// that.pieList = []
+				// that.dateList = []
+				// that.valueList = []
 				
-				that.billList = tempList
-				// console.log(that.billList)
+				// let tempList = that.allBill.filter(v => {
+				// 	const curTime = that.getTimeStr(v.time)
+				// 	const res = (
+				// 		// 时间 搜索
+				// 		v.time.includes(curDate)
+				// 	)
+				// 	return res
+				// })
+				
+				// // 日账单统计
+				// let dayList = [
+				// 	// { time: 'xxxx-xx-xx', income: 0, output: 0 }
+				// ]
+				
+				// // if (tempList.length) {
+				// // // 按照日期排序
+				// // tempList.sort((a,b)=> { return (that.getTimeStr(b.time) - that.getTimeStr(a.time)) })
+				// // // 按照金额大小排序
+				// tempList.sort((a,b)=> { return Math.abs(b.amount) - Math.abs(a.amount) })
+				// tempList.forEach((v) => {
+				// 	// 计算总收入和总支出
+				// 	if (v.type === 1) that.monthIncome += Number(v.amount)
+				// 	else that.monthOutput += Number(v.amount)
+					
+				// 	const index = dayList.findIndex(el => that.formatDate(el.time, that.yOrM ? '' : 'YYYY-MM') == that.formatDate(v.time, that.yOrM ? '' : 'YYYY-MM'))
+				// 	if (index !== -1) {
+				// 		dayList[index][v.type == 1 ? 'income' : 'output'] += v.amount
+				// 		dayList[index][v.type == 1 ? 'income' : 'output'] = (dayList[index][v.type == 1 ? 'income' : 'output'] * 100) / 100
+				// 	} else {
+				// 		dayList.push({
+				// 			time: that.formatDate(v.time,  that.yOrM ? '' : 'YYYY-MM'),
+				// 			income: v.type == 1 ? v.amount : 0,
+				// 			output: v.type == 1 ? 0 : v.amount,
+				// 		})
+				// 	}
+				// })
+				// that.monthIncome = (that.monthIncome * 100) / 100
+				// that.monthOutput = (that.monthOutput * 100) / 100
+				
+				// // 日期排序
+				// dayList.sort((a, b) => { return (that.getTimeStr(b.time) - that.getTimeStr(a.time)) })
+				// this.dayStatistics = dayList
+				
+				// const type = that.type == 'income' ? 1 : 2
+				// tempList = tempList.filter(v => v.type == type)
+				
+				// const tempTime = tempList.length ? tempList[0].time : that.curMonth
+				// const day = dayjs(tempTime).format('D')
+				// that.average = (Math.abs(that.type == 'income' ? (that.monthIncome / day) : (that.monthOutput / day))).toFixed(2)
+				
+				// // 折线图
+				// if (this.yOrM) {
+				// 	const curMonth = dayjs(tempTime).format('YYYY-MM')
+				// 	const days = that.getCurMonthDay(curMonth)
+				// 	for (let i = 1; i <= days; i++) {
+				// 		const curDay = curMonth + '-' + (i < 10 ? ('0' + i) : i)
+				// 		that.dateList.push(curDay)
+				// 		that.valueList.push(0)
+				// 		tempList.forEach((v) => {
+				// 			if (dayjs(v.time).format('YYYY-MM-DD') == curDay) {
+				// 				if (that.valueList[i - 1]) {
+				// 					that.valueList.splice(i - 1, 1, Math.abs(v.amount) + that.valueList[i - 1])
+				// 				} else {
+				// 					that.valueList.splice(i - 1, 1, Math.abs(v.amount))
+				// 				}
+				// 			}
+				// 		})
+				// 	}
+				// 	that.initLine()
+				// } else {
+				// 	const curYear = dayjs(tempTime).format('YYYY')
+				// 	for (let i = 1; i <= 12; i++) {
+				// 		const curMonth = curYear + '-' + (i < 10 ? ('0' + i) : i)
+				// 		that.dateList.push(curMonth)
+				// 		that.valueList.push(0)
+				// 		tempList.forEach((v) => {
+				// 			if (dayjs(v.time).format('YYYY-MM') == curMonth) {
+				// 				if (that.valueList[i - 1]) {
+				// 					that.valueList.splice(i - 1, 1, Math.abs(v.amount) + that.valueList[i - 1])
+				// 				} else {
+				// 					that.valueList.splice(i - 1, 1, Math.abs(v.amount))
+				// 				}
+				// 			}
+				// 		})
+				// 	}
+				// 	that.initLine()
 				// }
+				
+				// // 饼状图
+				// const pies = [
+				// 	// { value: 0, name: '餐饮' }
+				// ]
+				// tempList.map((v) => {
+				// 	const index = pies.findIndex(el => el.name == v.amountType.name)
+				// 	if (index != -1) {
+				// 		pies[index].value += Math.abs(v.amount)
+				// 		pies[index].value = (pies[index].value * 100) / 100
+				// 		pies[index].num += 1
+				// 	} else {
+				// 		pies.push({
+				// 			value: Math.abs(v.amount),
+				// 			name: v.amountType.name,
+				// 			amountType: v.amountType,
+				// 			num: 1
+				// 		})
+				// 	}
+				// })
+				// pies.sort((a,b)=> { return b.value - a.value })
+				// this.pieList = pies
+				// this.initPie()
+				
+				// that.billList = tempList
+				// // console.log(that.billList)
+				// // }
 			},
 			// 获取当前分类总占比
 			getCurPer (val) {

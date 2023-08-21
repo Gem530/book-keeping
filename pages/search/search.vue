@@ -11,7 +11,7 @@
 					placeholder="请选择开始时间"
 					@change="changeDatetimePicker"
 				></biaofun-datetime-picker> -->
-				<input type="text" placeholder="金额/分类/备注" v-model="searchTxt" @input="filterBill">
+				<input type="text" placeholder="备注" v-model="searchTxt" @input="filterBill">
 			</template>
 			<template #right><uni-icons type="settings" size="20" :color="colorTheme" @click="toggle"></uni-icons></template>
 		</NavBar>
@@ -105,6 +105,9 @@
 			BiaofunDatetimePicker,
 		},
 		computed: {
+			id () {
+				return this.$store.getters.idLive
+			},
 			theme () {
 				return this.$store.getters.themeLive
 			},
@@ -117,9 +120,10 @@
 		},
 		data() {
 			return {
+				db: uniCloud.database(),
 				allBill: [], // 进入页面时，获取所有的账单数据
 				billList: [], // 符合条件的账单数据
-				searchTxt: '', // 搜索条件
+				searchTxt: undefined, // 搜索条件
 				typeList: [], // 收入/支出 分类
 				endTime: dayjs(new Date()).format('YYYY-MM-DD') + ' 23:59', // 结束时间
 				startTime: dayjs(new Date().getTime() - (1000 * 60 * 60 * 24 * 30)).format('YYYY-MM-DD') + ' 00:00', // 开始时间
@@ -136,6 +140,10 @@
 			this.filterBill()
 		},
 		methods: {
+			getMonthDay(year, month) {
+			  let days = new Date(year, Number(month), 0).getDate()
+			  return days
+			},
 			// 返回时间戳
 			getTimeStr(v) {
 				return new Date(v).getTime()
@@ -178,56 +186,97 @@
 			// 筛选账单
 			filterBill () {
 				const that = this
-				const curDate = dayjs(that.curMonth).format('YYYY-MM')
 				that.monthIncome = 0
 				that.monthOutput = 0
 				
-				const tempList = that.allBill.filter(v => {
-					const curTime = that.getTimeStr(v.time)
-					const res = (
-						// 时间 搜索
-						(curTime >= that.getTimeStr(that.startTime) && curTime <= that.getTimeStr(that.endTime)) &&
-						// 金额/分类/备注 搜索
-						(that.searchTxt ? (
-							v.amount.toString().indexOf(that.searchTxt) !== -1 ||
-							v.amountType.name.indexOf(that.searchTxt) !== -1 ||
-							v.remark.indexOf(that.searchTxt) !== -1
-						) : true) &&
-						// 收入/支出分类 搜索
-						(that.typeList.length ? that.typeList.includes(v.amountType.name) : true)
-					)
-					return res
+				const dbcmd = that.db.command
+				this.db.collection('bill').where({
+					userId: this.id,
+					time: dbcmd.gte(that.getTimeStr(that.startTime + ':00'))
+						.and(dbcmd.lte(that.getTimeStr(that.endTime + ':59'))),
+					'amountType.name': that.typeList.length ? dbcmd.in(that.typeList) : dbcmd.nin([]),
+					remark: new RegExp(that.searchTxt),
 				})
-				
-				// if (tempList.length) {
-				// 按照日期排序
-				tempList.sort((a,b)=> { return (that.getTimeStr(b.time) - that.getTimeStr(a.time)) })
-				tempList.forEach((v) => {
-					// 计算总收入和总支出
-					if (v.type === 1) that.monthIncome += v.amount
-					else that.monthOutput += v.amount
+				.orderBy('time', 'desc') // 1字段排序的字段 2字段排序的顺序，升序(asc) 或 降序(desc)
+				.get().then((res) => {
+					const data = res.result.data
+					const tempList = data
+					
+					// 按照日期排序
+					const dateList = [
+						// { date: 'xxxx-xx-xx', daybalance: 0, list: [] }
+					]
+					if (!data.length) return
+					tempList.map(v => {
+						// 计算总收入和总支出
+						if (v.type === 1) that.monthIncome += Number(v.amount)
+						else that.monthOutput += Number(v.amount)
+						
+						v.time = dayjs(v.time).format('YYYY-MM-DD HH:mm')
+						const date = dayjs(v.time).format('YYYY-MM-DD')
+						const index = dateList.findIndex(el => el.date == date)
+						if (index != -1) {
+							dateList[index].list.push(v)
+							dateList[index].daybalance += Number(v.amount)
+							dateList[index].daybalance = (dateList[index].daybalance * 100) / 100
+						} else {
+							dateList.push({ date, daybalance: v.amount, list: [v] })
+						}
+					})
+					that.billList = dateList
+					// console.log(data, that.billList)
 				})
-				that.monthIncome = (that.monthIncome * 100) / 100
-				that.monthOutput = (that.monthOutput * 100) / 100
+				// const that = this
+				// const curDate = dayjs(that.curMonth).format('YYYY-MM')
+				// that.monthIncome = 0
+				// that.monthOutput = 0
 				
-				// 按照日期排序
-				const dateList = [
-					// { date: 'xxxx-xx-xx', daybalance: 0, list: [] }
-				]
-				tempList.map((v) => {
-					const date = dayjs(v.time).format('YYYY-MM-DD')
-					const index = dateList.findIndex(el => el.date == date)
-					if (index != -1) {
-						dateList[index].list.push(v)
-						dateList[index].daybalance += v.amount
-						dateList[index].daybalance = (dateList[index].daybalance * 100) / 100
-					} else {
-						dateList.push({ date, daybalance: v.amount, list: [v] })
-					}
-				})
+				// const tempList = that.allBill.filter(v => {
+				// 	const curTime = that.getTimeStr(v.time)
+				// 	const res = (
+				// 		// 时间 搜索
+				// 		(curTime >= that.getTimeStr(that.startTime) && curTime <= that.getTimeStr(that.endTime)) &&
+				// 		// 金额/分类/备注 搜索
+				// 		(that.searchTxt ? (
+				// 			v.amount.toString().indexOf(that.searchTxt) !== -1 ||
+				// 			v.amountType.name.indexOf(that.searchTxt) !== -1 ||
+				// 			v.remark.indexOf(that.searchTxt) !== -1
+				// 		) : true) &&
+				// 		// 收入/支出分类 搜索
+				// 		(that.typeList.length ? that.typeList.includes(v.amountType.name) : true)
+				// 	)
+				// 	return res
+				// })
 				
-				that.billList = dateList
-				// }
+				// // if (tempList.length) {
+				// // 按照日期排序
+				// tempList.sort((a,b)=> { return (that.getTimeStr(b.time) - that.getTimeStr(a.time)) })
+				// tempList.forEach((v) => {
+				// 	// 计算总收入和总支出
+				// 	if (v.type === 1) that.monthIncome += v.amount
+				// 	else that.monthOutput += v.amount
+				// })
+				// that.monthIncome = (that.monthIncome * 100) / 100
+				// that.monthOutput = (that.monthOutput * 100) / 100
+				
+				// // 按照日期排序
+				// const dateList = [
+				// 	// { date: 'xxxx-xx-xx', daybalance: 0, list: [] }
+				// ]
+				// tempList.map((v) => {
+				// 	const date = dayjs(v.time).format('YYYY-MM-DD')
+				// 	const index = dateList.findIndex(el => el.date == date)
+				// 	if (index != -1) {
+				// 		dateList[index].list.push(v)
+				// 		dateList[index].daybalance += v.amount
+				// 		dateList[index].daybalance = (dateList[index].daybalance * 100) / 100
+				// 	} else {
+				// 		dateList.push({ date, daybalance: v.amount, list: [v] })
+				// 	}
+				// })
+				
+				// that.billList = dateList
+				// // }
 			},
 			formatDate (value, format = 'YYYY-MM-DD') {
 				const res = dayjs(value).format(format)

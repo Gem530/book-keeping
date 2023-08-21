@@ -93,13 +93,13 @@
 			<view class="bill-empty-text">无账单，快去记录你的账单吧~</view>
 		</view>
 		
-		<!-- 悬浮图标 -->
-		<uni-icons class="to-login" type="person" size="50" :color="primaryTheme" @click="toPath('/pages/login/index')"></uni-icons>
-		<!-- 去登录 -->
+		<!-- 去登录-->
+		<!-- <uni-icons class="to-login" type="person" size="50" :color="primaryTheme" @click="toPath('/pages/login/index')"></uni-icons> -->
+		<!-- 悬浮图标  -->
 		<uni-icons class="fixed-icon" type="plus-filled" size="50" :color="primaryTheme" @click="toPath('/pages/add-bill/add-bill')"></uni-icons>
 		
 		<!-- 侧边栏 -->
-		<Sider ref="sider" :curMonth="curMonth" @change="change" @initBuget="initBuget"></Sider>
+		<Sider ref="sider" :curMonth="curMonth" @change="change" @initBuget="initBuget" @initBill="initBill"></Sider>
 	</view>
 </template>
 
@@ -211,11 +211,13 @@
 				.get().then((res) => {
 					const data = res.result.data
 					const tempList = data
+					console.log(data)
 					
 					// 按照日期排序
 					const dateList = [
 						// { date: 'xxxx-xx-xx', daybalance: 0, list: [] }
 					]
+					if (!data.length) return
 					tempList.map(v => {
 						// 计算总收入和总支出
 						if (v.type === 1) that.monthIncome += Number(v.amount)
@@ -233,7 +235,7 @@
 						}
 					})
 					that.billList = dateList
-					console.log(data, that.billList)
+					// console.log(data, that.billList)
 				})
 				
 				// uni.getStorage({
@@ -284,6 +286,7 @@
 			changeDatetimePicker (date) {
 				this.curMonth = `${date.YYYY}-${date.MM}-${date.DD} ${date.hh}:${date.mm}`
 				this.initBill()
+				this.initBuget()
 			},
 			formatDate (value, format) {
 				const res = dayjs(value).format(format)

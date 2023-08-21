@@ -217,6 +217,9 @@ var _default = {
     return {
       db: uniCloud.database(),
       buget: 0,
+      keyList: [],
+      allBill: [],
+      uplaodBtn: false,
       currentSize: '0kb',
       nightShow: false,
       startTime: undefined,
@@ -230,9 +233,14 @@ var _default = {
         name: '主题色',
         id: 2,
         fun: function fun() {
-          uni.navigateTo({
-            url: '/pages/primary/primary'
-          });
+          _this.toPrimary();
+        }
+      }, {
+        icon: 'color',
+        name: '上传本地数据',
+        id: 5,
+        fun: function fun() {
+          _this.uploadStorage();
         }
       }, {
         icon: 'wallet',
@@ -241,7 +249,7 @@ var _default = {
         },
         id: 3,
         fun: function fun() {
-          _this.$refs.inputDialog.open('center');
+          _this.openWallet();
         }
       }, {
         icon: 'trash',
@@ -250,20 +258,7 @@ var _default = {
         },
         id: 4,
         fun: function fun() {
-          var that = _this;
-          uni.showModal({
-            title: '提示',
-            content: '清空数据后，数据无法找回，确认清空吗？',
-            success: function success(res) {
-              if (res !== null && res !== void 0 && res.confirm) {
-                uni.clearStorage();
-                uni.showToast({
-                  title: '清空数据成功'
-                });
-                that.$emit('initBill');
-              }
-            }
-          });
+          _this.logOut();
         }
       }]
     };
@@ -279,8 +274,8 @@ var _default = {
         endDate = endDate < 10 ? '0' + endDate : endDate;
         that.startTime = new Date(curDate + '-01 00:00:00').getTime();
         that.endTime = new Date(curDate + '-' + endDate + ' 23:59:59').getTime();
-        this.db.collection('buget').where({
-          userId: this.id,
+        that.db.collection('buget').where({
+          userId: that.id,
           time: that.db.command.gte(that.startTime).and(that.db.command.lte(that.endTime))
         }).get().then(function (res) {
           // console.log(res)
@@ -317,11 +312,95 @@ var _default = {
     uni.getStorageInfo({
       success: function success(res) {
         // console.log(res)
+        var keys = res.keys.filter(function (v) {
+          return v.includes('bill:');
+        });
+        if (keys.length) {
+          that.keyList = keys;
+          that.uplaodBtn = true;
+          var list = [];
+          for (var i = 0; i < keys.length; i++) {
+            var data = JSON.parse(uni.getStorageSync(keys[i]));
+            list = list.concat(data.list);
+          }
+          list.sort(function (a, b) {
+            return that.getTimeStr(b.time) - that.getTimeStr(a.time);
+          });
+          that.allBill = list;
+          that.allBill.map(function (v) {
+            v.userId = that.id;
+            v.time = new Date(v.time + ':00').getTime();
+            v.createdTime = undefined;
+          });
+          // console.log(that.allBill)
+        } else {
+          this.uplaodBtn = false;
+        }
         that.currentSize = res.currentSize < 1024 ? res.currentSize + 'KB' : res.currentSize / 1024 + 'MB';
       }
     });
   },
   methods: {
+    toPrimary: function toPrimary() {
+      uni.navigateTo({
+        url: '/pages/primary/primary'
+      });
+    },
+    uploadStorage: function uploadStorage() {
+      var that = this;
+      if (that.uplaodBtn) {
+        uni.showLoading({
+          title: '上传中'
+        });
+        that.db.collection('bill').add(that.allBill).then(function () {
+          uni.hideLoading();
+          uni.showToast({
+            title: '上传成功'
+          });
+          that.$emit('initBill');
+          // that.keyList.forEach(v => {
+          // 	uni.removeStorage(v)
+          // })
+          // that.uplaodBtn = false
+        }).catch(function () {
+          uni.hideLoading();
+          uni.showToast({
+            icon: 'error',
+            title: '上传失败'
+          });
+        });
+      } else {
+        uni.showToast({
+          title: '无本地账单'
+        });
+      }
+    },
+    openWallet: function openWallet() {
+      this.$refs.inputDialog.open('center');
+    },
+    logOut: function logOut() {
+      var that = this;
+      uni.showModal({
+        title: '提示',
+        content: '清空数据后，数据无法找回，确认清空吗？',
+        success: function success(res) {
+          if (res !== null && res !== void 0 && res.confirm) {
+            uni.clearStorage();
+            uni.showToast({
+              title: '清空数据成功'
+            });
+            // that.$emit('initBill')
+            uni.navigateTo({
+              url: '/pages/login/index'
+            });
+          }
+        }
+      });
+    },
+    // 返回时间戳
+    getTimeStr: function getTimeStr(v) {
+      return new Date(v).getTime();
+    },
     getMonthDay: function getMonthDay(year, month) {
       var days = new Date(year, Number(month), 0).getDate();
       return days;
@@ -335,28 +414,16 @@ var _default = {
     },
     silderClick: function silderClick(item) {
       if (item.id == 2) {
-        uni.navigateTo({
-          url: '/pages/primary/primary'
-        });
+        this.toPrimary();
       }
       if (item.id == 3) {
-        this.$refs.inputDialog.open('center');
+        this.openWallet();
       }
       if (item.id == 4) {
-        var that = this;
-        uni.showModal({
-          title: '提示',
-          content: '清空数据后，数据无法找回，确认清空吗？',
-          success: function success(res) {
-            if (res !== null && res !== void 0 && res.confirm) {
-              uni.clearStorage();
-              uni.showToast({
-                title: '清空数据成功'
-              });
-              that.$emit('initBill');
-            }
-          }
-        });
+        this.logOut();
+      }
+      if (item.id == 5) {
+        this.uploadStorage();
       }
     },
     changeBg: function changeBg(value) {
@@ -374,19 +441,19 @@ var _default = {
 
       // const curDate = dayjs(that.curMonth).format('YYYY-MM')
 
-      this.db.collection('buget').where({
-        userId: this.id,
+      that.db.collection('buget').where({
+        userId: that.id,
         time: that.db.command.gte(that.startTime).and(that.db.command.lte(that.endTime))
       }).get().then(function (res) {
         // console.log(res)
         // that.buget = res.result.data.length ? res.result.data[0].buget : 0
         if (res.result.data.length) {
           // 修改预算
-          _this2.db.collection('buget').where({
-            userId: _this2.id,
+          that.db.collection('buget').where({
+            userId: that.id,
             time: that.db.command.gte(that.startTime).and(that.db.command.lte(that.endTime))
           }).update({
-            userId: _this2.id,
+            userId: that.id,
             time: that.startTime,
             buget: that.buget
           }).then(function (res) {
@@ -401,15 +468,15 @@ var _default = {
           });
         } else {
           // 添加预算
-          _this2.db.collection('buget').add({
-            userId: _this2.id,
+          that.db.collection('buget').add({
+            userId: that.id,
             time: that.startTime,
             buget: that.buget
           }).then(function (res) {
             uni.showToast({
               title: '添加预算成功'
             });
-            _this2.$emit('initBuget');
+            that.$emit('initBuget');
           }).catch(function () {
             uni.showToast({
               title: '添加预算失败'
@@ -417,35 +484,6 @@ var _default = {
           });
         }
       });
-      // uni.getStorage({
-      // 	key: 'bill:' + curDate,
-      // 	success(res) {
-      // 		const data = JSON.parse(res.data)
-      // 		data.buget = that.buget
-      // 		uni.setStorage({
-      // 			key: 'bill:' + curDate,
-      // 			data: JSON.stringify(data),
-      // 			success() {
-      // 				uni.showToast({title:'操作成功'})
-      // 				that.$emit('initBill')
-      // 			}
-      // 		})
-      // 	},
-      // 	fail() {
-      // 		const info = {
-      // 			buget: that.buget,
-      // 			list: []
-      // 		}
-      // 		uni.setStorage({
-      // 			key: 'bill:' + curDate,
-      // 			data: JSON.stringify(info),
-      // 			success() {
-      // 				uni.showToast({title:'操作成功'})
-      // 				that.$emit('initBill')
-      // 			}
-      // 		})
-      // 	}
-      // })
     }
   }
 };

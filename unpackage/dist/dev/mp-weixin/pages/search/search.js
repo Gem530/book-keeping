@@ -24,7 +24,7 @@ __webpack_require__.r(__webpack_exports__);
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
-/* WEBPACK VAR INJECTION */(function(uni) {
+/* WEBPACK VAR INJECTION */(function(uniCloud, uni) {
 
 var _interopRequireDefault = __webpack_require__(/*! @babel/runtime/helpers/interopRequireDefault */ 4);
 Object.defineProperty(exports, "__esModule", {
@@ -151,6 +151,9 @@ var _default = {
     BiaofunDatetimePicker: BiaofunDatetimePicker
   },
   computed: {
+    id: function id() {
+      return this.$store.getters.idLive;
+    },
     theme: function theme() {
       return this.$store.getters.themeLive;
     },
@@ -163,11 +166,12 @@ var _default = {
   },
   data: function data() {
     return {
+      db: uniCloud.database(),
       allBill: [],
       // 进入页面时，获取所有的账单数据
       billList: [],
       // 符合条件的账单数据
-      searchTxt: '',
+      searchTxt: undefined,
       // 搜索条件
       typeList: [],
       // 收入/支出 分类
@@ -205,6 +209,10 @@ var _default = {
     }))();
   },
   methods: {
+    getMonthDay: function getMonthDay(year, month) {
+      var days = new Date(year, Number(month), 0).getDate();
+      return days;
+    },
     // 返回时间戳
     getTimeStr: function getTimeStr(v) {
       return new Date(v).getTime();
@@ -248,56 +256,98 @@ var _default = {
     // 筛选账单
     filterBill: function filterBill() {
       var that = this;
-      var curDate = (0, _dayjs.default)(that.curMonth).format('YYYY-MM');
       that.monthIncome = 0;
       that.monthOutput = 0;
-      var tempList = that.allBill.filter(function (v) {
-        var curTime = that.getTimeStr(v.time);
-        var res =
-        // 时间 搜索
-        curTime >= that.getTimeStr(that.startTime) && curTime <= that.getTimeStr(that.endTime) && (
-        // 金额/分类/备注 搜索
-        that.searchTxt ? v.amount.toString().indexOf(that.searchTxt) !== -1 || v.amountType.name.indexOf(that.searchTxt) !== -1 || v.remark.indexOf(that.searchTxt) !== -1 : true) && (
-        // 收入/支出分类 搜索
-        that.typeList.length ? that.typeList.includes(v.amountType.name) : true);
-        return res;
-      });
+      var dbcmd = that.db.command;
+      this.db.collection('bill').where({
+        userId: this.id,
+        time: dbcmd.gte(that.getTimeStr(that.startTime + ':00')).and(dbcmd.lte(that.getTimeStr(that.endTime + ':59'))),
+        'amountType.name': that.typeList.length ? dbcmd.in(that.typeList) : dbcmd.nin([]),
+        remark: new RegExp(that.searchTxt)
+      }).orderBy('time', 'desc') // 1字段排序的字段 2字段排序的顺序，升序(asc) 或 降序(desc)
+      .get().then(function (res) {
+        var data = res.result.data;
+        var tempList = data;
 
-      // if (tempList.length) {
-      // 按照日期排序
-      tempList.sort(function (a, b) {
-        return that.getTimeStr(b.time) - that.getTimeStr(a.time);
-      });
-      tempList.forEach(function (v) {
-        // 计算总收入和总支出
-        if (v.type === 1) that.monthIncome += v.amount;else that.monthOutput += v.amount;
-      });
-      that.monthIncome = that.monthIncome * 100 / 100;
-      that.monthOutput = that.monthOutput * 100 / 100;
-
-      // 按照日期排序
-      var dateList = [
-        // { date: 'xxxx-xx-xx', daybalance: 0, list: [] }
-      ];
-      tempList.map(function (v) {
-        var date = (0, _dayjs.default)(v.time).format('YYYY-MM-DD');
-        var index = dateList.findIndex(function (el) {
-          return el.date == date;
-        });
-        if (index != -1) {
-          dateList[index].list.push(v);
-          dateList[index].daybalance += v.amount;
-          dateList[index].daybalance = dateList[index].daybalance * 100 / 100;
-        } else {
-          dateList.push({
-            date: date,
-            daybalance: v.amount,
-            list: [v]
+        // 按照日期排序
+        var dateList = [
+          // { date: 'xxxx-xx-xx', daybalance: 0, list: [] }
+        ];
+        if (!data.length) return;
+        tempList.map(function (v) {
+          // 计算总收入和总支出
+          if (v.type === 1) that.monthIncome += Number(v.amount);else that.monthOutput += Number(v.amount);
+          v.time = (0, _dayjs.default)(v.time).format('YYYY-MM-DD HH:mm');
+          var date = (0, _dayjs.default)(v.time).format('YYYY-MM-DD');
+          var index = dateList.findIndex(function (el) {
+            return el.date == date;
           });
-        }
+          if (index != -1) {
+            dateList[index].list.push(v);
+            dateList[index].daybalance += Number(v.amount);
+            dateList[index].daybalance = dateList[index].daybalance * 100 / 100;
+          } else {
+            dateList.push({
+              date: date,
+              daybalance: v.amount,
+              list: [v]
+            });
+          }
+        });
+        that.billList = dateList;
+        // console.log(data, that.billList)
       });
-      that.billList = dateList;
-      // }
+      // const that = this
+      // const curDate = dayjs(that.curMonth).format('YYYY-MM')
+      // that.monthIncome = 0
+      // that.monthOutput = 0
+
+      // const tempList = that.allBill.filter(v => {
+      // 	const curTime = that.getTimeStr(v.time)
+      // 	const res = (
+      // 		// 时间 搜索
+      // 		(curTime >= that.getTimeStr(that.startTime) && curTime <= that.getTimeStr(that.endTime)) &&
+      // 		// 金额/分类/备注 搜索
+      // 		(that.searchTxt ? (
+      // 			v.amount.toString().indexOf(that.searchTxt) !== -1 ||
+      // 			v.amountType.name.indexOf(that.searchTxt) !== -1 ||
+      // 			v.remark.indexOf(that.searchTxt) !== -1
+      // 		) : true) &&
+      // 		// 收入/支出分类 搜索
+      // 		(that.typeList.length ? that.typeList.includes(v.amountType.name) : true)
+      // 	)
+      // 	return res
+      // })
+
+      // // if (tempList.length) {
+      // // 按照日期排序
+      // tempList.sort((a,b)=> { return (that.getTimeStr(b.time) - that.getTimeStr(a.time)) })
+      // tempList.forEach((v) => {
+      // 	// 计算总收入和总支出
+      // 	if (v.type === 1) that.monthIncome += v.amount
+      // 	else that.monthOutput += v.amount
+      // })
+      // that.monthIncome = (that.monthIncome * 100) / 100
+      // that.monthOutput = (that.monthOutput * 100) / 100
+
+      // // 按照日期排序
+      // const dateList = [
+      // 	// { date: 'xxxx-xx-xx', daybalance: 0, list: [] }
+      // ]
+      // tempList.map((v) => {
+      // 	const date = dayjs(v.time).format('YYYY-MM-DD')
+      // 	const index = dateList.findIndex(el => el.date == date)
+      // 	if (index != -1) {
+      // 		dateList[index].list.push(v)
+      // 		dateList[index].daybalance += v.amount
+      // 		dateList[index].daybalance = (dateList[index].daybalance * 100) / 100
+      // 	} else {
+      // 		dateList.push({ date, daybalance: v.amount, list: [v] })
+      // 	}
+      // })
+
+      // that.billList = dateList
+      // // }
     },
     formatDate: function formatDate(value) {
       var format = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'YYYY-MM-DD';
@@ -318,7 +368,7 @@ var _default = {
   }
 };
 exports.default = _default;
-/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 2)["default"]))
+/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/vue-cli-plugin-uni/packages/uni-cloud/dist/index.js */ 27)["default"], __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 2)["default"]))
 
 /***/ }),
 

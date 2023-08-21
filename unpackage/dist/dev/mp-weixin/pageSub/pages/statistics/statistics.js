@@ -132,7 +132,16 @@ var render = function () {
       })
     : null
   var g5 = _vm.billList.length
-  var l2 = g5 ? _vm.billList.slice(0, 20) : null
+  var l2 = g5
+    ? _vm.__map(_vm.billList.slice(0, 20), function (item, __i2__) {
+        var $orig = _vm.__get_orig(item)
+        var m3 = _vm.formatDate(item.time, "YYYY-MM-DD HH:mm")
+        return {
+          $orig: $orig,
+          m3: m3,
+        }
+      })
+    : null
   _vm.$mp.data = Object.assign(
     {},
     {
@@ -181,7 +190,7 @@ __webpack_require__.r(__webpack_exports__);
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
-/* WEBPACK VAR INJECTION */(function(uni) {
+/* WEBPACK VAR INJECTION */(function(uniCloud) {
 
 var _interopRequireDefault = __webpack_require__(/*! @babel/runtime/helpers/interopRequireDefault */ 4);
 Object.defineProperty(exports, "__esModule", {
@@ -359,6 +368,9 @@ var _default = {
     BiaofunDatetimePicker: BiaofunDatetimePicker
   },
   computed: {
+    id: function id() {
+      return this.$store.getters.idLive;
+    },
     theme: function theme() {
       return this.$store.getters.themeLive;
     },
@@ -368,23 +380,26 @@ var _default = {
   },
   data: function data() {
     return {
+      db: uniCloud.database(),
       type: 'output',
       // 类型 收入/支出
       yOrM: true,
       // true 为月份 false 为年份
       average: 0,
       // 日均额
+      endTime: undefined,
       allBill: [],
       // 所有账单信息
       billList: [],
       // 当前类型的账单
+      startTime: undefined,
       monthIncome: 0,
       // 总收入
       monthOutput: 0,
       // 总支出
       dayStatistics: [],
       // 日账单统计
-      curMonth: (0, _dayjs.default)(new Date()).format('YYYY-MM-DD HH:mm'),
+      curMonth: (0, _dayjs.default)(new Date()).format('YYYY-MM-DD HH:mm:ss'),
       // 当前选择时间
 
       // echarts数据
@@ -404,11 +419,9 @@ var _default = {
             case 0:
               // console.log(option)
               _this.type = option.type;
-              _context.next = 3;
-              return _this.getData();
-            case 3:
+              // await this.getData()
               _this.initBill();
-            case 4:
+            case 2:
             case "end":
               return _context.stop();
           }
@@ -425,170 +438,303 @@ var _default = {
     getTimeStr: function getTimeStr(v) {
       return new Date(v).getTime();
     },
+    getMonthDay: function getMonthDay(year, month) {
+      var days = new Date(year, Number(month), 0).getDate();
+      return days;
+    },
     formatDate: function formatDate(value, format) {
       var res = (0, _dayjs.default)(value).format(format || 'YYYY-MM-DD');
       return res;
     },
-    getData: function getData() {
-      var _this2 = this;
-      return new Promise(function (resolve, reject) {
-        var that = _this2;
-        uni.getStorageInfo({
-          success: function success(res) {
-            var keys = res.keys.filter(function (v) {
-              return v.includes('bill:');
-            });
-            var list = [];
-            for (var i = 0; i < keys.length; i++) {
-              var data = JSON.parse(uni.getStorageSync(keys[i]));
-              list = list.concat(data.list);
-            }
-            list.sort(function (a, b) {
-              return that.getTimeStr(b.time) - that.getTimeStr(a.time);
-            });
-            that.allBill = list;
-            resolve(true);
-          },
-          fail: function fail() {
-            reject(false);
-          }
-        });
-      });
-    },
+    // getData () {
+    // 	return new Promise((resolve, reject) => {
+    // 		const that = this
+    // 		uni.getStorageInfo({
+    // 			success(res) {
+    // 				const keys = res.keys.filter(v => v.includes('bill:'))
+    // 				let list = []
+    // 				for (let i = 0; i < keys.length; i++) {
+    // 					const data = JSON.parse(uni.getStorageSync(keys[i]))
+    // 					list = list.concat(data.list)
+    // 				}
+    // 				list.sort((a,b)=> { return (that.getTimeStr(b.time) - that.getTimeStr(a.time)) })
+    // 				that.allBill = list
+    // 				resolve(true)
+    // 			},
+    // 			fail() {
+    // 				reject(false)
+    // 			}
+    // 		})
+    // 	})
+    // },
     initBill: function initBill() {
+      var _this2 = this;
       var that = this;
-      var curDate = (0, _dayjs.default)(that.curMonth).format(this.yOrM ? 'YYYY-MM' : 'YYYY');
+      var curDate = (0, _dayjs.default)(this.curMonth).format(this.yOrM ? 'YYYY-MM' : 'YYYY');
+      // console.log(curDate)
+      var yAndM = curDate.toString().split('-');
+      var endDate = this.getMonthDay(yAndM[0], yAndM[1]);
+      endDate = endDate < 10 ? '0' + endDate : endDate;
+      that.startTime = new Date(curDate + (this.yOrM ? '-01 00:00:00' : '-01-01 00:00:00')).getTime();
+      that.endTime = new Date(curDate + (this.yOrM ? '-' + endDate + ' 23:59:59' : '-12-31 23:59:59')).getTime();
       that.monthIncome = 0;
       that.monthOutput = 0;
-      that.pieList = [];
-      that.dateList = [];
-      that.valueList = [];
-      var tempList = that.allBill.filter(function (v) {
-        var curTime = that.getTimeStr(v.time);
-        var res =
-        // 时间 搜索
-        v.time.includes(curDate);
-        return res;
-      });
+      var dbcmd = that.db.command;
+      this.db.collection('bill').where({
+        userId: this.id,
+        time: dbcmd.gte(that.getTimeStr(that.startTime)).and(dbcmd.lte(that.getTimeStr(that.endTime)))
+      }).orderBy('time', 'desc') // 1字段排序的字段 2字段排序的顺序，升序(asc) 或 降序(desc)
+      .get().then(function (res) {
+        var data = res.result.data;
+        var tempList = data;
+        that.pieList = [];
+        that.dateList = [];
+        that.valueList = [];
 
-      // 日账单统计
-      var dayList = [
-        // { time: 'xxxx-xx-xx', income: 0, output: 0 }
-      ];
+        // 日账单统计
+        var dayList = [
+          // { time: 'xxxx-xx-xx', income: 0, output: 0 }
+        ];
+        if (!data.length) return;
 
-      // if (tempList.length) {
-      // // 按照日期排序
-      // tempList.sort((a,b)=> { return (that.getTimeStr(b.time) - that.getTimeStr(a.time)) })
-      // // 按照金额大小排序
-      tempList.sort(function (a, b) {
-        return Math.abs(b.amount) - Math.abs(a.amount);
-      });
-      tempList.forEach(function (v) {
-        // 计算总收入和总支出
-        if (v.type === 1) that.monthIncome += Number(v.amount);else that.monthOutput += Number(v.amount);
-        var index = dayList.findIndex(function (el) {
-          return that.formatDate(el.time, that.yOrM ? '' : 'YYYY-MM') == that.formatDate(v.time, that.yOrM ? '' : 'YYYY-MM');
+        // if (tempList.length) {
+        // // 按照日期排序
+        // tempList.sort((a,b)=> { return (that.getTimeStr(b.time) - that.getTimeStr(a.time)) })
+        // // 按照金额大小排序
+        tempList.sort(function (a, b) {
+          return Math.abs(b.amount) - Math.abs(a.amount);
         });
-        if (index !== -1) {
-          dayList[index][v.type == 1 ? 'income' : 'output'] += v.amount;
-          dayList[index][v.type == 1 ? 'income' : 'output'] = dayList[index][v.type == 1 ? 'income' : 'output'] * 100 / 100;
-        } else {
-          dayList.push({
-            time: that.formatDate(v.time, that.yOrM ? '' : 'YYYY-MM'),
-            income: v.type == 1 ? v.amount : 0,
-            output: v.type == 1 ? 0 : v.amount
-          });
-        }
-      });
-      that.monthIncome = that.monthIncome * 100 / 100;
-      that.monthOutput = that.monthOutput * 100 / 100;
+        tempList.forEach(function (v) {
+          // 计算总收入和总支出
+          if (v.type === 1) that.monthIncome += Number(v.amount);else that.monthOutput += Number(v.amount);
 
-      // 日期排序
-      dayList.sort(function (a, b) {
-        return that.getTimeStr(b.time) - that.getTimeStr(a.time);
-      });
-      this.dayStatistics = dayList;
-      var type = that.type == 'income' ? 1 : 2;
-      tempList = tempList.filter(function (v) {
-        return v.type == type;
-      });
-      var tempTime = tempList.length ? tempList[0].time : that.curMonth;
-      var day = (0, _dayjs.default)(tempTime).format('D');
-      that.average = Math.abs(that.type == 'income' ? that.monthIncome / day : that.monthOutput / day).toFixed(2);
-
-      // 折线图
-      if (this.yOrM) {
-        var curMonth = (0, _dayjs.default)(tempTime).format('YYYY-MM');
-        var days = that.getCurMonthDay(curMonth);
-        var _loop = function _loop(i) {
-          var curDay = curMonth + '-' + (i < 10 ? '0' + i : i);
-          that.dateList.push(curDay);
-          that.valueList.push(0);
-          tempList.forEach(function (v) {
-            if ((0, _dayjs.default)(v.time).format('YYYY-MM-DD') == curDay) {
-              if (that.valueList[i - 1]) {
-                that.valueList.splice(i - 1, 1, Math.abs(v.amount) + that.valueList[i - 1]);
-              } else {
-                that.valueList.splice(i - 1, 1, Math.abs(v.amount));
-              }
-            }
+          // 月/日账单统计
+          var index = dayList.findIndex(function (el) {
+            return that.formatDate(el.time, that.yOrM ? '' : 'YYYY-MM') == that.formatDate(v.time, that.yOrM ? '' : 'YYYY-MM');
           });
-        };
-        for (var i = 1; i <= days; i++) {
-          _loop(i);
-        }
-        that.initLine();
-      } else {
-        var curYear = (0, _dayjs.default)(tempTime).format('YYYY');
-        var _loop2 = function _loop2(_i) {
-          var curMonth = curYear + '-' + (_i < 10 ? '0' + _i : _i);
-          that.dateList.push(curMonth);
-          that.valueList.push(0);
-          tempList.forEach(function (v) {
-            if ((0, _dayjs.default)(v.time).format('YYYY-MM') == curMonth) {
-              if (that.valueList[_i - 1]) {
-                that.valueList.splice(_i - 1, 1, Math.abs(v.amount) + that.valueList[_i - 1]);
-              } else {
-                that.valueList.splice(_i - 1, 1, Math.abs(v.amount));
-              }
-            }
-          });
-        };
-        for (var _i = 1; _i <= 12; _i++) {
-          _loop2(_i);
-        }
-        that.initLine();
-      }
-
-      // 饼状图
-      var pies = [
-        // { value: 0, name: '餐饮' }
-      ];
-      tempList.map(function (v) {
-        var index = pies.findIndex(function (el) {
-          return el.name == v.amountType.name;
+          if (index !== -1) {
+            dayList[index][v.type == 1 ? 'income' : 'output'] += Number(v.amount);
+            dayList[index][v.type == 1 ? 'income' : 'output'] = Number(dayList[index][v.type == 1 ? 'income' : 'output']) * 100 / 100;
+          } else {
+            dayList.push({
+              time: that.formatDate(v.time, that.yOrM ? '' : 'YYYY-MM'),
+              income: v.type == 1 ? Number(v.amount) : 0,
+              output: v.type == 1 ? 0 : Number(v.amount)
+            });
+          }
         });
-        if (index != -1) {
-          pies[index].value += Math.abs(v.amount);
-          pies[index].value = pies[index].value * 100 / 100;
-          pies[index].num += 1;
+        that.monthIncome = that.monthIncome * 100 / 100;
+        that.monthOutput = that.monthOutput * 100 / 100;
+
+        // 日期排序
+        dayList.sort(function (a, b) {
+          return that.getTimeStr(b.time) - that.getTimeStr(a.time);
+        });
+        _this2.dayStatistics = dayList;
+        var type = that.type == 'income' ? 1 : 2;
+        tempList = tempList.filter(function (v) {
+          return v.type == type;
+        });
+        var tempTime = tempList.length ? tempList[0].time : that.curMonth;
+        var day = (0, _dayjs.default)(tempTime).format('D');
+        that.average = Math.abs(that.type == 'income' ? that.monthIncome / day : that.monthOutput / day).toFixed(2);
+
+        // 折线图
+        if (_this2.yOrM) {
+          var curMonth = (0, _dayjs.default)(tempTime).format('YYYY-MM');
+          var days = that.getCurMonthDay(curMonth);
+          var _loop = function _loop(i) {
+            var curDay = curMonth + '-' + (i < 10 ? '0' + i : i);
+            that.dateList.push(curDay);
+            that.valueList.push(0);
+            tempList.forEach(function (v) {
+              if ((0, _dayjs.default)(v.time).format('YYYY-MM-DD') == curDay) {
+                if (that.valueList[i - 1]) {
+                  that.valueList.splice(i - 1, 1, Math.abs(v.amount) + that.valueList[i - 1]);
+                } else {
+                  that.valueList.splice(i - 1, 1, Math.abs(v.amount));
+                }
+              }
+            });
+          };
+          for (var i = 1; i <= days; i++) {
+            _loop(i);
+          }
+          that.initLine();
         } else {
-          pies.push({
-            value: Math.abs(v.amount),
-            name: v.amountType.name,
-            amountType: v.amountType,
-            num: 1
-          });
+          var curYear = (0, _dayjs.default)(tempTime).format('YYYY');
+          var _loop2 = function _loop2(_i) {
+            var curMonth = curYear + '-' + (_i < 10 ? '0' + _i : _i);
+            that.dateList.push(curMonth);
+            that.valueList.push(0);
+            tempList.forEach(function (v) {
+              if ((0, _dayjs.default)(v.time).format('YYYY-MM') == curMonth) {
+                if (that.valueList[_i - 1]) {
+                  that.valueList.splice(_i - 1, 1, Math.abs(v.amount) + that.valueList[_i - 1]);
+                } else {
+                  that.valueList.splice(_i - 1, 1, Math.abs(v.amount));
+                }
+              }
+            });
+          };
+          for (var _i = 1; _i <= 12; _i++) {
+            _loop2(_i);
+          }
+          that.initLine();
         }
+
+        // 饼状图
+        var pies = [
+          // { value: 0, name: '餐饮' }
+        ];
+        tempList.map(function (v) {
+          var index = pies.findIndex(function (el) {
+            return el.name == v.amountType.name;
+          });
+          if (index != -1) {
+            pies[index].value += Math.abs(Number(v.amount));
+            pies[index].value = pies[index].value * 100 / 100;
+            pies[index].num += 1;
+          } else {
+            pies.push({
+              value: Math.abs(v.amount),
+              name: v.amountType.name,
+              amountType: v.amountType,
+              num: 1
+            });
+          }
+        });
+        pies.sort(function (a, b) {
+          return b.value - a.value;
+        });
+        _this2.pieList = pies;
+        _this2.initPie();
+        that.billList = tempList;
+        // console.log(that.billList)
+        // }
       });
-      pies.sort(function (a, b) {
-        return b.value - a.value;
-      });
-      this.pieList = pies;
-      this.initPie();
-      that.billList = tempList;
-      // console.log(that.billList)
+      // const that = this
+      // const curDate = dayjs(that.curMonth).format(this.yOrM ? 'YYYY-MM' : 'YYYY')
+      // that.monthIncome = 0
+      // that.monthOutput = 0
+      // that.pieList = []
+      // that.dateList = []
+      // that.valueList = []
+
+      // let tempList = that.allBill.filter(v => {
+      // 	const curTime = that.getTimeStr(v.time)
+      // 	const res = (
+      // 		// 时间 搜索
+      // 		v.time.includes(curDate)
+      // 	)
+      // 	return res
+      // })
+
+      // // 日账单统计
+      // let dayList = [
+      // 	// { time: 'xxxx-xx-xx', income: 0, output: 0 }
+      // ]
+
+      // // if (tempList.length) {
+      // // // 按照日期排序
+      // // tempList.sort((a,b)=> { return (that.getTimeStr(b.time) - that.getTimeStr(a.time)) })
+      // // // 按照金额大小排序
+      // tempList.sort((a,b)=> { return Math.abs(b.amount) - Math.abs(a.amount) })
+      // tempList.forEach((v) => {
+      // 	// 计算总收入和总支出
+      // 	if (v.type === 1) that.monthIncome += Number(v.amount)
+      // 	else that.monthOutput += Number(v.amount)
+
+      // 	const index = dayList.findIndex(el => that.formatDate(el.time, that.yOrM ? '' : 'YYYY-MM') == that.formatDate(v.time, that.yOrM ? '' : 'YYYY-MM'))
+      // 	if (index !== -1) {
+      // 		dayList[index][v.type == 1 ? 'income' : 'output'] += v.amount
+      // 		dayList[index][v.type == 1 ? 'income' : 'output'] = (dayList[index][v.type == 1 ? 'income' : 'output'] * 100) / 100
+      // 	} else {
+      // 		dayList.push({
+      // 			time: that.formatDate(v.time,  that.yOrM ? '' : 'YYYY-MM'),
+      // 			income: v.type == 1 ? v.amount : 0,
+      // 			output: v.type == 1 ? 0 : v.amount,
+      // 		})
+      // 	}
+      // })
+      // that.monthIncome = (that.monthIncome * 100) / 100
+      // that.monthOutput = (that.monthOutput * 100) / 100
+
+      // // 日期排序
+      // dayList.sort((a, b) => { return (that.getTimeStr(b.time) - that.getTimeStr(a.time)) })
+      // this.dayStatistics = dayList
+
+      // const type = that.type == 'income' ? 1 : 2
+      // tempList = tempList.filter(v => v.type == type)
+
+      // const tempTime = tempList.length ? tempList[0].time : that.curMonth
+      // const day = dayjs(tempTime).format('D')
+      // that.average = (Math.abs(that.type == 'income' ? (that.monthIncome / day) : (that.monthOutput / day))).toFixed(2)
+
+      // // 折线图
+      // if (this.yOrM) {
+      // 	const curMonth = dayjs(tempTime).format('YYYY-MM')
+      // 	const days = that.getCurMonthDay(curMonth)
+      // 	for (let i = 1; i <= days; i++) {
+      // 		const curDay = curMonth + '-' + (i < 10 ? ('0' + i) : i)
+      // 		that.dateList.push(curDay)
+      // 		that.valueList.push(0)
+      // 		tempList.forEach((v) => {
+      // 			if (dayjs(v.time).format('YYYY-MM-DD') == curDay) {
+      // 				if (that.valueList[i - 1]) {
+      // 					that.valueList.splice(i - 1, 1, Math.abs(v.amount) + that.valueList[i - 1])
+      // 				} else {
+      // 					that.valueList.splice(i - 1, 1, Math.abs(v.amount))
+      // 				}
+      // 			}
+      // 		})
+      // 	}
+      // 	that.initLine()
+      // } else {
+      // 	const curYear = dayjs(tempTime).format('YYYY')
+      // 	for (let i = 1; i <= 12; i++) {
+      // 		const curMonth = curYear + '-' + (i < 10 ? ('0' + i) : i)
+      // 		that.dateList.push(curMonth)
+      // 		that.valueList.push(0)
+      // 		tempList.forEach((v) => {
+      // 			if (dayjs(v.time).format('YYYY-MM') == curMonth) {
+      // 				if (that.valueList[i - 1]) {
+      // 					that.valueList.splice(i - 1, 1, Math.abs(v.amount) + that.valueList[i - 1])
+      // 				} else {
+      // 					that.valueList.splice(i - 1, 1, Math.abs(v.amount))
+      // 				}
+      // 			}
+      // 		})
+      // 	}
+      // 	that.initLine()
       // }
+
+      // // 饼状图
+      // const pies = [
+      // 	// { value: 0, name: '餐饮' }
+      // ]
+      // tempList.map((v) => {
+      // 	const index = pies.findIndex(el => el.name == v.amountType.name)
+      // 	if (index != -1) {
+      // 		pies[index].value += Math.abs(v.amount)
+      // 		pies[index].value = (pies[index].value * 100) / 100
+      // 		pies[index].num += 1
+      // 	} else {
+      // 		pies.push({
+      // 			value: Math.abs(v.amount),
+      // 			name: v.amountType.name,
+      // 			amountType: v.amountType,
+      // 			num: 1
+      // 		})
+      // 	}
+      // })
+      // pies.sort((a,b)=> { return b.value - a.value })
+      // this.pieList = pies
+      // this.initPie()
+
+      // that.billList = tempList
+      // // console.log(that.billList)
+      // // }
     },
     // 获取当前分类总占比
     getCurPer: function getCurPer(val) {
@@ -703,7 +849,7 @@ var _default = {
   }
 };
 exports.default = _default;
-/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/uni-mp-weixin/dist/index.js */ 2)["default"]))
+/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(/*! ./node_modules/@dcloudio/vue-cli-plugin-uni/packages/uni-cloud/dist/index.js */ 27)["default"]))
 
 /***/ }),
 

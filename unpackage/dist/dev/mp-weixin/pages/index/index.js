@@ -432,7 +432,7 @@ var _default = {
       .get().then(function (res) {
         var data = res.result.data;
         var tempList = data;
-        console.log(data);
+        // console.log(data)
 
         // 按照日期排序
         var dateList = [

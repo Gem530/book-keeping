@@ -32,10 +32,12 @@
 		methods: {
 			toHome() {
 				// 登录注册成功，去首页
-				uni.navigateTo({ url: '/pages/index/index' })
 				uni.setStorage({
 					key:'token',
-					data: ''+this.id
+					data: ''+this.id,
+					success() {
+						uni.navigateTo({ url: '/pages/index/index' })
+					}
 				})
 			},
 			login() {

@@ -40,7 +40,7 @@
 				<i :class="['iconfont', currentAmountType.icon]" :style="{'color': currentAmountType.color || primaryTheme}"></i>
 				<text class="amount-text">{{currentAmountType.name}}</text>
 			</view>
-			<input type="text" class="amount-input" v-model:number.trim="amount" @keyup="mustNumber" focus>
+			<input type="number" class="amount-input" v-model:number.trim="amount" @keyup="mustNumber" focus>
 		</view>
 		<view class="amount-box margin-top">
 			<view class="amount-type">

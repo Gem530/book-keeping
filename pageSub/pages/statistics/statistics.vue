@@ -46,7 +46,7 @@
 		<view class="params-list">
 			<view class="params-item">
 				<view class="params-item-text">结余</view>
-				<view class="params-item-value">￥{{monthIncome - Math.abs(monthOutput)}}</view>
+				<view class="params-item-value">￥{{Number(monthIncome - Math.abs(monthOutput)) * 100 / 100}}</view>
 			</view>
 			<view class="params-item">
 				<view class="params-item-text">总笔数</view>
@@ -231,19 +231,19 @@
 			// },
 			initBill () {
 				const that = this
-				const curDate = dayjs(this.curMonth).format(this.yOrM ? 'YYYY-MM' : 'YYYY')
+				const curDate = dayjs(that.curMonth).format(that.yOrM ? 'YYYY-MM' : 'YYYY')
 				// console.log(curDate)
 				const yAndM = curDate.toString().split('-')
-				let endDate = this.getMonthDay(yAndM[0], yAndM[1])
+				let endDate = that.getMonthDay(yAndM[0], yAndM[1])
 				endDate = endDate < 10 ? '0' + endDate: endDate
-				that.startTime = new Date(curDate+(this.yOrM ? '-01 00:00:00' : '-01-01 00:00:00')).getTime()
-				that.endTime = new Date(curDate+(this.yOrM ? '-'+endDate+' 23:59:59' : '-12-31 23:59:59')).getTime()
+				that.startTime = new Date(curDate+(that.yOrM ? '-01 00:00:00' : '-01-01 00:00:00')).getTime()
+				that.endTime = new Date(curDate+(that.yOrM ? '-'+endDate+' 23:59:59' : '-12-31 23:59:59')).getTime()
 				that.monthIncome = 0
 				that.monthOutput = 0
 				
 				const dbcmd = that.db.command
-				this.db.collection('bill').where({
-					userId: this.id,
+				that.db.collection('bill').where({
+					userId: that.id,
 					time: dbcmd.gte(that.getTimeStr(that.startTime))
 						.and(dbcmd.lte(that.getTimeStr(that.endTime)))
 				})
@@ -252,6 +252,7 @@
 					const data = res.result.data
 					let tempList = data
 					
+					that.billList = []
 					that.pieList = []
 					that.dateList = []
 					that.valueList = []
@@ -280,8 +281,8 @@
 						} else {
 							dayList.push({
 								time: that.formatDate(v.time,  that.yOrM ? '' : 'YYYY-MM'),
-								income: v.type == 1 ? Number(v.amount) : 0,
-								output: v.type == 1 ? 0 : Number(v.amount),
+								income: v.type == 1 ? Number(v.amount) * 100 / 100 : 0,
+								output: v.type == 1 ? 0 : Number(v.amount) * 100 / 100,
 							})
 						}
 					})
@@ -290,17 +291,17 @@
 					
 					// 日期排序
 					dayList.sort((a, b) => { return (that.getTimeStr(b.time) - that.getTimeStr(a.time)) })
-					this.dayStatistics = dayList
+					that.dayStatistics = dayList
 					
 					const type = that.type == 'income' ? 1 : 2
 					tempList = tempList.filter(v => v.type == type)
 					
 					const tempTime = tempList.length ? tempList[0].time : that.curMonth
 					const day = dayjs(tempTime).format('D')
-					that.average = (Math.abs(that.type == 'income' ? (that.monthIncome / day) : (that.monthOutput / day))).toFixed(2)
+					that.average = (Math.abs(that.type == 'income' ? (that.monthIncome / day) : (that.monthOutput / day))) * 100 / 100
 					
 					// 折线图
-					if (this.yOrM) {
+					if (that.yOrM) {
 						const curMonth = dayjs(tempTime).format('YYYY-MM')
 						const days = that.getCurMonthDay(curMonth)
 						for (let i = 1; i <= days; i++) {
@@ -349,7 +350,7 @@
 							pies[index].num += 1
 						} else {
 							pies.push({
-								value: Math.abs(v.amount),
+								value: Math.abs(v.amount) * 100 / 100,
 								name: v.amountType.name,
 								amountType: v.amountType,
 								num: 1
@@ -357,8 +358,8 @@
 						}
 					})
 					pies.sort((a,b)=> { return b.value - a.value })
-					this.pieList = pies
-					this.initPie()
+					that.pieList = pies
+					that.initPie()
 					
 					that.billList = tempList
 					// console.log(that.billList)

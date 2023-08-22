@@ -22,7 +22,7 @@
 				<view class="balance-item">
 					<view class="balance-info">
 						<view class="balance-item-title">总结余</view>
-						<view class="balance-item-value font-max">￥{{monthIncome - Math.abs(monthOutput)}}</view>
+						<view class="balance-item-value font-max">￥{{Number(monthIncome - Math.abs(monthOutput)) * 100 / 100}}</view>
 					</view>
 				</view>
 			</view>
@@ -201,6 +201,7 @@
 				.get().then((res) => {
 					const data = res.result.data
 					const tempList = data
+					that.billList = []
 					
 					// 按照日期排序
 					const dateList = [
@@ -220,9 +221,11 @@
 							dateList[index].daybalance += Number(v.amount)
 							dateList[index].daybalance = (dateList[index].daybalance * 100) / 100
 						} else {
-							dateList.push({ date, daybalance: v.amount, list: [v] })
+							dateList.push({ date, daybalance: Number(v.amount) * 100 / 100, list: [v] })
 						}
 					})
+					that.monthIncome = (that.monthIncome * 100) / 100
+					that.monthOutput = (that.monthOutput * 100) / 100
 					that.billList = dateList
 					// console.log(data, that.billList)
 				})

@@ -126,22 +126,22 @@ var render = function () {
   var _vm = this
   var _h = _vm.$createElement
   var _c = _vm._self._c || _h
-  var g0 = Math.abs(_vm.monthOutput)
-  var g1 = _vm.buget ? Math.abs(_vm.monthOutput) : null
-  var g2 = _vm.billList.length
-  var l0 = g2
+  var m0 = Number(_vm.monthIncome - Math.abs(_vm.monthOutput))
+  var g0 = _vm.buget ? Math.abs(_vm.monthOutput) : null
+  var g1 = _vm.billList.length
+  var l0 = g1
     ? _vm.__map(_vm.billList, function (el, __i0__) {
         var $orig = _vm.__get_orig(el)
-        var m0 = _vm.formatDate(el.date, "MM/DD")
-        var m1 = _vm.formatDate(el.date, "d")
+        var m1 = _vm.formatDate(el.date, "MM/DD")
+        var m2 = _vm.formatDate(el.date, "d")
         return {
           $orig: $orig,
-          m0: m0,
           m1: m1,
+          m2: m2,
         }
       })
     : null
-  var m2 = !g2 ? _vm.formatDate(_vm.curMonth, "M") : null
+  var m3 = !g1 ? _vm.formatDate(_vm.curMonth, "M") : null
   if (!_vm._isMounted) {
     _vm.e0 = function (item) {
       var args = [],
@@ -159,11 +159,11 @@ var render = function () {
     {},
     {
       $root: {
+        m0: m0,
         g0: g0,
         g1: g1,
-        g2: g2,
         l0: l0,
-        m2: m2,
+        m3: m3,
       },
     }
   )
@@ -414,10 +414,10 @@ var _default = {
     },
     initBill: function initBill() {
       var that = this;
-      var curDate = (0, _dayjs.default)(this.curMonth).format('YYYY-MM');
+      var curDate = (0, _dayjs.default)(that.curMonth).format('YYYY-MM');
       // console.log(curDate)
       var yAndM = curDate.toString().split('-');
-      var endDate = this.getMonthDay(yAndM[0], yAndM[1]);
+      var endDate = that.getMonthDay(yAndM[0], yAndM[1]);
       endDate = endDate < 10 ? '0' + endDate : endDate;
       that.startTime = new Date(curDate + '-01 00:00:00').getTime();
       that.endTime = new Date(curDate + '-' + endDate + ' 23:59:59').getTime();
@@ -425,12 +425,13 @@ var _default = {
       that.monthOutput = 0;
 
       // console.log(startTime, endTime)
-      this.db.collection('bill').where({
-        userId: this.id,
+      that.db.collection('bill').where({
+        userId: that.id,
         time: that.db.command.gte(that.startTime).and(that.db.command.lte(that.endTime))
       }).orderBy('time', 'desc') // 1字段排序的字段 2字段排序的顺序，升序(asc) 或 降序(desc)
       .get().then(function (res) {
         var data = res.result.data;
+        that.billList = [];
         var tempList = data;
         // console.log(data)
 
@@ -454,11 +455,13 @@ var _default = {
           } else {
             dateList.push({
               date: date,
-              daybalance: v.amount,
+              daybalance: Number(v.amount) * 100 / 100,
               list: [v]
             });
           }
         });
+        that.monthIncome = that.monthIncome * 100 / 100;
+        that.monthOutput = that.monthOutput * 100 / 100;
         that.billList = dateList;
         // console.log(data, that.billList)
       });
@@ -530,48 +533,65 @@ var _default = {
     },
     delBill: function delBill(v) {
       var that = this;
-      console.log(v);
+      // console.log(v)
+
+      // // console.log(startTime, endTime)
       uni.showModal({
         title: '提示',
         content: '确认删除当前账单吗？',
         success: function success(res) {
           if (res !== null && res !== void 0 && res.confirm) {
-            var storgeKey = 'bill:' + (0, _dayjs.default)(v.time).format('YYYY-MM');
-            var resData = null;
-            uni.getStorage({
-              key: storgeKey,
-              success: function success(res) {
-                var data = JSON.parse(res.data);
-                var index = data.list.findIndex(function (el) {
-                  return el.createdTime == v.createdTime && el.amount == v.amount;
-                });
-                data.list.splice(index, 1);
-                console.log(data);
-                uni.setStorage({
-                  key: storgeKey,
-                  data: JSON.stringify(data),
-                  success: function success() {
-                    uni.showToast({
-                      title: '删除成功'
-                    });
-                    that.initBill();
-                  },
-                  fail: function fail() {
-                    uni.showToast({
-                      title: '删除失败'
-                    });
-                  }
-                });
-              },
-              fail: function fail() {
-                uni.showToast({
-                  title: '删除失败'
-                });
-              }
+            that.db.collection('bill').where({
+              _id: v._id
+            }).remove().then(function () {
+              uni.showToast({
+                title: '删除成功'
+              });
+              that.initBill();
+            }).catch(function (err) {
+              console.log(err);
+              uni.showToast({
+                icon: 'error',
+                title: '删除失败'
+              });
             });
           }
         }
       });
+      // uni.showModal({
+      // 	title: '提示',
+      // 	content: '确认删除当前账单吗？',
+      // 	success(res) {
+      // 		if (res?.confirm) {
+      // 			const storgeKey = 'bill:' + dayjs(v.time).format('YYYY-MM')
+      // 			let resData = null
+      // 			uni.getStorage({
+      // 				key: storgeKey,
+      // 				success(res) {
+      // 					const data = JSON.parse(res.data)
+      // 					const index = data.list.findIndex(el => el.createdTime == v.createdTime && el.amount == v.amount)
+      // 					data.list.splice(index, 1)
+      // 					console.log(data)
+
+      // 					uni.setStorage({
+      // 						key: storgeKey,
+      // 						data: JSON.stringify(data),
+      // 						success() {
+      // 							uni.showToast({title: '删除成功'})
+      // 							that.initBill()
+      // 						},
+      // 						fail() {
+      // 							uni.showToast({title: '删除失败'})
+      // 						}
+      // 					})
+      // 				},
+      // 				fail() {
+      // 					uni.showToast({title: '删除失败'})
+      // 				}
+      // 			})
+      // 		}
+      // 	}
+      // })
     }
   }
 };

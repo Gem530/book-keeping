@@ -22,7 +22,7 @@
 				<view class="balance-item">
 					<view class="balance-info">
 						<view class="balance-item-title">总结余</view>
-						<view class="balance-item-value font-max">￥{{monthIncome - Math.abs(monthOutput)}}</view>
+						<view class="balance-item-value font-max">￥{{Number(monthIncome - Math.abs(monthOutput)) * 100 / 100}}</view>
 					</view>
 				</view>
 			</view>
@@ -94,7 +94,7 @@
 		</view>
 		
 		<!-- 去登录-->
-		<!-- <uni-icons class="to-login" type="person" size="50" :color="primaryTheme" @click="toPath('/pages/login/index')"></uni-icons> -->
+		<uni-icons class="to-login" type="contact-filled" size="50" :color="primaryTheme" @click="toPath('/pages/login/index')"></uni-icons>
 		<!-- 悬浮图标  -->
 		<uni-icons class="fixed-icon" type="plus-filled" size="50" :color="primaryTheme" @click="toPath('/pages/add-bill/add-bill')"></uni-icons>
 		
@@ -191,10 +191,10 @@
 			},
 			initBill () {
 				const that = this
-				const curDate = dayjs(this.curMonth).format('YYYY-MM')
+				const curDate = dayjs(that.curMonth).format('YYYY-MM')
 				// console.log(curDate)
 				const yAndM = curDate.toString().split('-')
-				let endDate = this.getMonthDay(yAndM[0], yAndM[1])
+				let endDate = that.getMonthDay(yAndM[0], yAndM[1])
 				endDate = endDate < 10 ? '0' + endDate: endDate
 				that.startTime = new Date(curDate+'-01 00:00:00').getTime()
 				that.endTime = new Date(curDate+'-'+endDate+' 23:59:59').getTime()
@@ -202,14 +202,15 @@
 				that.monthOutput = 0
 				
 				// console.log(startTime, endTime)
-				this.db.collection('bill').where({
-					userId: this.id,
+				that.db.collection('bill').where({
+					userId: that.id,
 					time: that.db.command.gte(that.startTime)
 						.and(that.db.command.lte(that.endTime))
 				})
 				.orderBy('time', 'desc') // 1字段排序的字段 2字段排序的顺序，升序(asc) 或 降序(desc)
 				.get().then((res) => {
 					const data = res.result.data
+					that.billList = []
 					const tempList = data
 					// console.log(data)
 					
@@ -231,9 +232,11 @@
 							dateList[index].daybalance += Number(v.amount)
 							dateList[index].daybalance = (dateList[index].daybalance * 100) / 100
 						} else {
-							dateList.push({ date, daybalance: v.amount, list: [v] })
+							dateList.push({ date, daybalance: Number(v.amount) * 100 / 100, list: [v] })
 						}
 					})
+					that.monthIncome = (that.monthIncome * 100) / 100
+					that.monthOutput = (that.monthOutput * 100) / 100
 					that.billList = dateList
 					// console.log(data, that.billList)
 				})
@@ -303,41 +306,60 @@
 			},
 			delBill (v) {
 				const that = this
-				console.log(v)
+				// console.log(v)
+				
+				// // console.log(startTime, endTime)
 				uni.showModal({
 					title: '提示',
 					content: '确认删除当前账单吗？',
 					success(res) {
 						if (res?.confirm) {
-							const storgeKey = 'bill:' + dayjs(v.time).format('YYYY-MM')
-							let resData = null
-							uni.getStorage({
-								key: storgeKey,
-								success(res) {
-									const data = JSON.parse(res.data)
-									const index = data.list.findIndex(el => el.createdTime == v.createdTime && el.amount == v.amount)
-									data.list.splice(index, 1)
-									console.log(data)
-									
-									uni.setStorage({
-										key: storgeKey,
-										data: JSON.stringify(data),
-										success() {
-											uni.showToast({title: '删除成功'})
-											that.initBill()
-										},
-										fail() {
-											uni.showToast({title: '删除失败'})
-										}
-									})
-								},
-								fail() {
-									uni.showToast({title: '删除失败'})
-								}
+							that.db.collection('bill').where({
+								_id: v._id
+							}).remove().then(() => {
+								uni.showToast({title: '删除成功'})
+								that.initBill()
+							}).catch((err) => {
+								console.log(err)
+								uni.showToast({icon:'error',title: '删除失败'})
 							})
 						}
 					}
 				})
+				// uni.showModal({
+				// 	title: '提示',
+				// 	content: '确认删除当前账单吗？',
+				// 	success(res) {
+				// 		if (res?.confirm) {
+				// 			const storgeKey = 'bill:' + dayjs(v.time).format('YYYY-MM')
+				// 			let resData = null
+				// 			uni.getStorage({
+				// 				key: storgeKey,
+				// 				success(res) {
+				// 					const data = JSON.parse(res.data)
+				// 					const index = data.list.findIndex(el => el.createdTime == v.createdTime && el.amount == v.amount)
+				// 					data.list.splice(index, 1)
+				// 					console.log(data)
+									
+				// 					uni.setStorage({
+				// 						key: storgeKey,
+				// 						data: JSON.stringify(data),
+				// 						success() {
+				// 							uni.showToast({title: '删除成功'})
+				// 							that.initBill()
+				// 						},
+				// 						fail() {
+				// 							uni.showToast({title: '删除失败'})
+				// 						}
+				// 					})
+				// 				},
+				// 				fail() {
+				// 					uni.showToast({title: '删除失败'})
+				// 				}
+				// 			})
+				// 		}
+				// 	}
+				// })
 			}
 		}
 	}

@@ -7,9 +7,9 @@
     "transformPx" : false,
     /* 5+App特有相关 */
     "app-plus" : {
-        /* 关闭沉浸模式 */
+        /* 开启沉浸模式 */
         "statusbar" : {
-            "immersed" : false
+            "immersed" : true
         },
         "usingComponents" : true,
         "nvueStyleCompiler" : "uni-app",
@@ -67,8 +67,7 @@
                     "weixin" : {
                         "appid" : "wxfac328c3ee26f0d2",
                         "UniversalLinks" : "https://static-mp-13321bb4-bfdf-4168-bca8-3d97f4e33a88.next.bspapp.com/uni-universallinks/__UNI__2D47213/"
-                    },
-                    "univerify" : {}
+                    }
                 },
                 "push" : {},
                 "share" : {}

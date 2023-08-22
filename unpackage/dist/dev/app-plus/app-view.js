@@ -690,9 +690,18 @@ var render = function () {
           },
         },
       }),
+      _c("uni-icons", {
+        staticClass: _vm._$g(49, "sc"),
+        attrs: { _i: 49 },
+        on: {
+          click: function ($event) {
+            return _vm.$handleViewEvent($event)
+          },
+        },
+      }),
       _c("Sider", {
         ref: "sider",
-        attrs: { _i: 49 },
+        attrs: { _i: 50 },
         on: {
           change: function ($event) {
             return _vm.$handleViewEvent($event)
@@ -3486,7 +3495,7 @@ var render = function () {
           {
             key: "left",
             fn: function (_empty_, _svm, _si) {
-              return undefined
+              return [_vm._v(_svm._$g("2-" + _si, "t0-0"))]
             },
           },
           {

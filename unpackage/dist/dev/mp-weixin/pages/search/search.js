@@ -268,6 +268,7 @@ var _default = {
       .get().then(function (res) {
         var data = res.result.data;
         var tempList = data;
+        that.billList = [];
 
         // 按照日期排序
         var dateList = [
@@ -289,11 +290,13 @@ var _default = {
           } else {
             dateList.push({
               date: date,
-              daybalance: v.amount,
+              daybalance: Number(v.amount) * 100 / 100,
               list: [v]
             });
           }
         });
+        that.monthIncome = that.monthIncome * 100 / 100;
+        that.monthOutput = that.monthOutput * 100 / 100;
         that.billList = dateList;
         // console.log(data, that.billList)
       });
@@ -527,29 +530,29 @@ var render = function () {
   var _vm = this
   var _h = _vm.$createElement
   var _c = _vm._self._c || _h
-  var g0 = Math.abs(_vm.monthOutput)
-  var g1 = _vm.billList.length
-  var l0 = g1
+  var m0 = Number(_vm.monthIncome - Math.abs(_vm.monthOutput))
+  var g0 = _vm.billList.length
+  var l0 = g0
     ? _vm.__map(_vm.billList, function (el, __i0__) {
         var $orig = _vm.__get_orig(el)
-        var m0 = _vm.formatDate(el.date, "MM/DD")
-        var m1 = _vm.formatDate(el.date, "d")
+        var m1 = _vm.formatDate(el.date, "MM/DD")
+        var m2 = _vm.formatDate(el.date, "d")
         return {
           $orig: $orig,
-          m0: m0,
           m1: m1,
+          m2: m2,
         }
       })
     : null
-  var m2 = !g1 ? _vm.formatDate(_vm.curMonth, "M") : null
+  var m3 = !g0 ? _vm.formatDate(_vm.curMonth, "M") : null
   _vm.$mp.data = Object.assign(
     {},
     {
       $root: {
+        m0: m0,
         g0: g0,
-        g1: g1,
         l0: l0,
-        m2: m2,
+        m3: m3,
       },
     }
   )

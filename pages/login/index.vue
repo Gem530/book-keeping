@@ -1,7 +1,7 @@
 <template>
 	<view class="login">
 		<NavBar>
-			<template #left></template>
+			<template #left>{{''}}</template>
 			<template #center>登录</template>
 			<!-- <template #right><uni-icons type="search" size="20" :color="colorTheme" @click="toPath('/pages/search/search')"></uni-icons></template> -->
 		</NavBar>

@@ -103,42 +103,42 @@ var render = function () {
   var _vm = this
   var _h = _vm.$createElement
   var _c = _vm._self._c || _h
-  var g0 = Math.abs(_vm.monthOutput)
-  var g1 = _vm.billList.length
-  var g2 = _vm.pieList.length
-  var l0 = g2
+  var m0 = Number(_vm.monthIncome - Math.abs(_vm.monthOutput))
+  var g0 = _vm.billList.length
+  var g1 = _vm.pieList.length
+  var l0 = g1
     ? _vm.__map(_vm.pieList, function (item, __i0__) {
         var $orig = _vm.__get_orig(item)
-        var m0 = _vm.getCurPer(item.value)
         var m1 = _vm.getCurPer(item.value)
+        var m2 = _vm.getCurPer(item.value)
         return {
           $orig: $orig,
-          m0: m0,
           m1: m1,
+          m2: m2,
         }
       })
     : null
-  var g3 = _vm.dayStatistics.length
-  var l1 = g3
+  var g2 = _vm.dayStatistics.length
+  var l1 = g2
     ? _vm.__map(_vm.dayStatistics, function (item, __i1__) {
         var $orig = _vm.__get_orig(item)
-        var m2 = _vm.formatDate(item.time, _vm.yOrM ? "MM-DD" : "YYYY-MM")
-        var g4 = Math.abs(item.output)
-        return {
-          $orig: $orig,
-          m2: m2,
-          g4: g4,
-        }
-      })
-    : null
-  var g5 = _vm.billList.length
-  var l2 = g5
-    ? _vm.__map(_vm.billList.slice(0, 20), function (item, __i2__) {
-        var $orig = _vm.__get_orig(item)
-        var m3 = _vm.formatDate(item.time, "YYYY-MM-DD HH:mm")
+        var m3 = _vm.formatDate(item.time, _vm.yOrM ? "MM-DD" : "YYYY-MM")
+        var g3 = Math.abs(item.output)
         return {
           $orig: $orig,
           m3: m3,
+          g3: g3,
+        }
+      })
+    : null
+  var g4 = _vm.billList.length
+  var l2 = g4
+    ? _vm.__map(_vm.billList.slice(0, 20), function (item, __i2__) {
+        var $orig = _vm.__get_orig(item)
+        var m4 = _vm.formatDate(item.time, "YYYY-MM-DD HH:mm")
+        return {
+          $orig: $orig,
+          m4: m4,
         }
       })
     : null
@@ -146,13 +146,13 @@ var render = function () {
     {},
     {
       $root: {
+        m0: m0,
         g0: g0,
         g1: g1,
-        g2: g2,
         l0: l0,
-        g3: g3,
+        g2: g2,
         l1: l1,
-        g5: g5,
+        g4: g4,
         l2: l2,
       },
     }
@@ -468,25 +468,25 @@ var _default = {
     // 	})
     // },
     initBill: function initBill() {
-      var _this2 = this;
       var that = this;
-      var curDate = (0, _dayjs.default)(this.curMonth).format(this.yOrM ? 'YYYY-MM' : 'YYYY');
+      var curDate = (0, _dayjs.default)(that.curMonth).format(that.yOrM ? 'YYYY-MM' : 'YYYY');
       // console.log(curDate)
       var yAndM = curDate.toString().split('-');
-      var endDate = this.getMonthDay(yAndM[0], yAndM[1]);
+      var endDate = that.getMonthDay(yAndM[0], yAndM[1]);
       endDate = endDate < 10 ? '0' + endDate : endDate;
-      that.startTime = new Date(curDate + (this.yOrM ? '-01 00:00:00' : '-01-01 00:00:00')).getTime();
-      that.endTime = new Date(curDate + (this.yOrM ? '-' + endDate + ' 23:59:59' : '-12-31 23:59:59')).getTime();
+      that.startTime = new Date(curDate + (that.yOrM ? '-01 00:00:00' : '-01-01 00:00:00')).getTime();
+      that.endTime = new Date(curDate + (that.yOrM ? '-' + endDate + ' 23:59:59' : '-12-31 23:59:59')).getTime();
       that.monthIncome = 0;
       that.monthOutput = 0;
       var dbcmd = that.db.command;
-      this.db.collection('bill').where({
-        userId: this.id,
+      that.db.collection('bill').where({
+        userId: that.id,
         time: dbcmd.gte(that.getTimeStr(that.startTime)).and(dbcmd.lte(that.getTimeStr(that.endTime)))
       }).orderBy('time', 'desc') // 1字段排序的字段 2字段排序的顺序，升序(asc) 或 降序(desc)
       .get().then(function (res) {
         var data = res.result.data;
         var tempList = data;
+        that.billList = [];
         that.pieList = [];
         that.dateList = [];
         that.valueList = [];
@@ -518,8 +518,8 @@ var _default = {
           } else {
             dayList.push({
               time: that.formatDate(v.time, that.yOrM ? '' : 'YYYY-MM'),
-              income: v.type == 1 ? Number(v.amount) : 0,
-              output: v.type == 1 ? 0 : Number(v.amount)
+              income: v.type == 1 ? Number(v.amount) * 100 / 100 : 0,
+              output: v.type == 1 ? 0 : Number(v.amount) * 100 / 100
             });
           }
         });
@@ -530,17 +530,17 @@ var _default = {
         dayList.sort(function (a, b) {
           return that.getTimeStr(b.time) - that.getTimeStr(a.time);
         });
-        _this2.dayStatistics = dayList;
+        that.dayStatistics = dayList;
         var type = that.type == 'income' ? 1 : 2;
         tempList = tempList.filter(function (v) {
           return v.type == type;
         });
         var tempTime = tempList.length ? tempList[0].time : that.curMonth;
         var day = (0, _dayjs.default)(tempTime).format('D');
-        that.average = Math.abs(that.type == 'income' ? that.monthIncome / day : that.monthOutput / day).toFixed(2);
+        that.average = Math.abs(that.type == 'income' ? that.monthIncome / day : that.monthOutput / day) * 100 / 100;
 
         // 折线图
-        if (_this2.yOrM) {
+        if (that.yOrM) {
           var curMonth = (0, _dayjs.default)(tempTime).format('YYYY-MM');
           var days = that.getCurMonthDay(curMonth);
           var _loop = function _loop(i) {
@@ -597,7 +597,7 @@ var _default = {
             pies[index].num += 1;
           } else {
             pies.push({
-              value: Math.abs(v.amount),
+              value: Math.abs(v.amount) * 100 / 100,
               name: v.amountType.name,
               amountType: v.amountType,
               num: 1
@@ -607,8 +607,8 @@ var _default = {
         pies.sort(function (a, b) {
           return b.value - a.value;
         });
-        _this2.pieList = pies;
-        _this2.initPie();
+        that.pieList = pies;
+        that.initPie();
         that.billList = tempList;
         // console.log(that.billList)
         // }
@@ -757,7 +757,7 @@ var _default = {
     },
     // 折线图初始化值
     initLine: function initLine() {
-      var _this3 = this;
+      var _this2 = this;
       var that = this;
       that.lineOption = {
         tooltip: {
@@ -780,7 +780,7 @@ var _default = {
             color: that.$store.getters.textColorLive,
             formatter: function formatter(value, index) {
               // console.log(value, index)
-              return (0, _dayjs.default)(value).format(_this3.yOrM ? 'DD' : 'MM');
+              return (0, _dayjs.default)(value).format(_this2.yOrM ? 'DD' : 'MM');
             }
           },
           data: that.dateList

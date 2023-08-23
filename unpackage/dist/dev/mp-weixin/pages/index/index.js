@@ -313,6 +313,8 @@ var _dayjs = _interopRequireDefault(__webpack_require__(/*! dayjs */ 53));
 //
 //
 //
+//
+//
 var Sider = function Sider() {
   __webpack_require__.e(/*! require.ensure | component/sider/index */ "component/sider/index").then((function () {
     return resolve(__webpack_require__(/*! @/component/sider/index.vue */ 120));
@@ -398,6 +400,18 @@ var _default = {
     // 		}
     // 	})
     // },
+    delAgainData: function delAgainData() {
+      this.db.collection('bill').where({
+        createTime: 1692751769721
+      }).remove().then(function (res) {
+        // console.log(res)
+        uni.showToast({
+          title: '删除成功'
+        });
+      }).catch(function (err) {
+        console.log(err);
+      });
+    },
     getMonthDay: function getMonthDay(year, month) {
       var days = new Date(year, Number(month), 0).getDate();
       return days;
@@ -413,6 +427,7 @@ var _default = {
       });
     },
     initBill: function initBill() {
+      return false;
       var that = this;
       var curDate = (0, _dayjs.default)(that.curMonth).format('YYYY-MM');
       // console.log(curDate)

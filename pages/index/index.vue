@@ -93,6 +93,8 @@
 			<view class="bill-empty-text">无账单，快去记录你的账单吧~</view>
 		</view>
 		
+		<!-- <button @click="delAgainData">删除重复数据</button> -->
+		
 		<!-- 去登录-->
 		<uni-icons class="to-login" type="contact-filled" size="50" :color="primaryTheme" @click="toPath('/pages/login/index')"></uni-icons>
 		<!-- 悬浮图标  -->
@@ -174,6 +176,16 @@
 			// 		}
 			// 	})
 			// },
+			delAgainData () {
+				this.db.collection('bill').where({
+					createTime: 1692751769721
+				}).remove().then(res => {
+					// console.log(res)
+					uni.showToast({title: '删除成功'})
+				}).catch((err) => {
+					console.log(err)
+				})
+			},
 			getMonthDay(year, month) {
 			  let days = new Date(year, Number(month), 0).getDate()
 			  return days
@@ -190,6 +202,7 @@
 				})
 			},
 			initBill () {
+				return false
 				const that = this
 				const curDate = dayjs(that.curMonth).format('YYYY-MM')
 				// console.log(curDate)

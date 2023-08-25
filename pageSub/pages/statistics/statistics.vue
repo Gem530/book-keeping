@@ -34,11 +34,11 @@
 		<view class="balance">
 			<view :class="{'balance-item': true, 'balance-item-active': type == 'income'}" @click="chooseType('income')">
 				<view class="balance-item-text">总收入</view>
-				<view class="balance-item-value">￥{{monthIncome}}</view>
+				<view class="balance-item-value">￥{{monthIncome.toFixed(2)}}</view>
 			</view>
 			<view :class="{'balance-item': true, 'balance-item-active': type == 'output'}" @click="chooseType('output')">
 				<view class="balance-item-text">总支出</view>
-				<view class="balance-item-value">￥{{monthOutput}}</view>
+				<view class="balance-item-value">￥{{monthOutput.toFixed(2)}}</view>
 			</view>
 		</view>
 		
@@ -46,7 +46,7 @@
 		<view class="params-list">
 			<view class="params-item">
 				<view class="params-item-text">结余</view>
-				<view class="params-item-value">￥{{Number(monthIncome - Math.abs(monthOutput)) * 100 / 100}}</view>
+				<view class="params-item-value">￥{{(Number(monthIncome - Math.abs(monthOutput)) * 100 / 100).toFixed(2)}}</view>
 			</view>
 			<view class="params-item">
 				<view class="params-item-text">总笔数</view>
@@ -54,9 +54,12 @@
 			</view>
 			<view class="params-item">
 				<view class="params-item-text">日均额</view>
-				<view class="params-item-value">￥{{average}}</view>
+				<view class="params-item-value">￥{{(average).toFixed(2)}}</view>
 			</view>
 		</view>
+		
+		<!-- 获取数据 -->
+		<button @click="initBill">获取当月数据</button>
 		
 		<!-- 折线图 -->
 		<LineChart v-if="lineOption" id="lineChart" :options="lineOption"></LineChart>
@@ -83,7 +86,7 @@
 					<view
 						:class="['bill-amount', item.type == 1 ? '' : 'red']"
 						:style="{'color': item.type == 1 ? primaryTheme : ''}"
-					>￥{{item.value}}</view>
+					>￥{{(item.value).toFixed(2)}}</view>
 					<view class="bill-time">{{item.num}}笔</view>
 				</view>
 			</view>
@@ -189,12 +192,10 @@
 			// console.log(option)
 			this.type = option.type
 			// await this.getData()
-			this.initBill()
 		},
 		methods: {
 			chooseYearOrMonth (v) {
 				this.yOrM = v
-				this.initBill()
 			},
 			// 返回时间戳
 			getTimeStr(v) {
@@ -490,7 +491,7 @@
 			},
 			// 获取当前分类总占比
 			getCurPer (val) {
-				return (val / (this.type == 'income' ? this.monthIncome : Math.abs(this.monthOutput)) * 100).toFixed(2)
+				return (val / (this.type == 'income' ? this.monthIncome : Math.abs(this.monthOutput)) * 100)
 			},
 			// 获取当前月份天数  传入格式'2023-05'
 			getCurMonthDay (month) {
@@ -501,11 +502,9 @@
 			},
 			changeDatetimePicker (date) {
 				this.curMonth = `${date.YYYY}-${date.MM}-${date.DD} ${date.hh}:${date.mm}`
-				this.initBill()
 			},
 			chooseType (val) {
 				this.type = val
-				this.initBill()
 			},
 			// 折线图初始化值
 			initLine () {

@@ -199,8 +199,6 @@ var _default = {
               _context.next = 2;
               return _this.getData();
             case 2:
-              _this.filterBill();
-            case 3:
             case "end":
               return _context.stop();
           }
@@ -530,29 +528,32 @@ var render = function () {
   var _vm = this
   var _h = _vm.$createElement
   var _c = _vm._self._c || _h
-  var m0 = Number(_vm.monthIncome - Math.abs(_vm.monthOutput))
-  var g0 = _vm.billList.length
-  var l0 = g0
+  var g0 = (
+    (Number(_vm.monthIncome - Math.abs(_vm.monthOutput)) * 100) /
+    100
+  ).toFixed(2)
+  var g1 = _vm.billList.length
+  var l0 = g1
     ? _vm.__map(_vm.billList, function (el, __i0__) {
         var $orig = _vm.__get_orig(el)
-        var m1 = _vm.formatDate(el.date, "MM/DD")
-        var m2 = _vm.formatDate(el.date, "d")
+        var m0 = _vm.formatDate(el.date, "MM/DD")
+        var m1 = _vm.formatDate(el.date, "d")
         return {
           $orig: $orig,
+          m0: m0,
           m1: m1,
-          m2: m2,
         }
       })
     : null
-  var m3 = !g0 ? _vm.formatDate(_vm.curMonth, "M") : null
+  var m2 = !g1 ? _vm.formatDate(_vm.curMonth, "M") : null
   _vm.$mp.data = Object.assign(
     {},
     {
       $root: {
-        m0: m0,
         g0: g0,
+        g1: g1,
         l0: l0,
-        m3: m3,
+        m2: m2,
       },
     }
   )

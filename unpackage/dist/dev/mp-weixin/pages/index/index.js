@@ -126,22 +126,25 @@ var render = function () {
   var _vm = this
   var _h = _vm.$createElement
   var _c = _vm._self._c || _h
-  var m0 = Number(_vm.monthIncome - Math.abs(_vm.monthOutput))
-  var g0 = _vm.buget ? Math.abs(_vm.monthOutput) : null
-  var g1 = _vm.billList.length
-  var l0 = g1
+  var g0 = (
+    (Number(_vm.monthIncome - Math.abs(_vm.monthOutput)) * 100) /
+    100
+  ).toFixed(2)
+  var g1 = _vm.buget ? Math.abs(_vm.monthOutput) : null
+  var g2 = _vm.billList.length
+  var l0 = g2
     ? _vm.__map(_vm.billList, function (el, __i0__) {
         var $orig = _vm.__get_orig(el)
-        var m1 = _vm.formatDate(el.date, "MM/DD")
-        var m2 = _vm.formatDate(el.date, "d")
+        var m0 = _vm.formatDate(el.date, "MM/DD")
+        var m1 = _vm.formatDate(el.date, "d")
         return {
           $orig: $orig,
+          m0: m0,
           m1: m1,
-          m2: m2,
         }
       })
     : null
-  var m3 = !g1 ? _vm.formatDate(_vm.curMonth, "M") : null
+  var m2 = !g2 ? _vm.formatDate(_vm.curMonth, "M") : null
   if (!_vm._isMounted) {
     _vm.e0 = function (item) {
       var args = [],
@@ -159,11 +162,11 @@ var render = function () {
     {},
     {
       $root: {
-        m0: m0,
         g0: g0,
         g1: g1,
+        g2: g2,
         l0: l0,
-        m3: m3,
+        m2: m2,
       },
     }
   )
@@ -208,6 +211,9 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = void 0;
 var _dayjs = _interopRequireDefault(__webpack_require__(/*! dayjs */ 53));
+//
+//
+//
 //
 //
 //
@@ -389,7 +395,6 @@ var _default = {
         });
       }
     });
-    this.initBill();
     this.initBuget();
   },
   methods: {
@@ -427,7 +432,6 @@ var _default = {
       });
     },
     initBill: function initBill() {
-      return false;
       var that = this;
       var curDate = (0, _dayjs.default)(that.curMonth).format('YYYY-MM');
       // console.log(curDate)
@@ -528,7 +532,6 @@ var _default = {
     },
     changeDatetimePicker: function changeDatetimePicker(date) {
       this.curMonth = "".concat(date.YYYY, "-").concat(date.MM, "-").concat(date.DD, " ").concat(date.hh, ":").concat(date.mm);
-      this.initBill();
       this.initBuget();
     },
     formatDate: function formatDate(value, format) {
@@ -562,7 +565,6 @@ var _default = {
               uni.showToast({
                 title: '删除成功'
               });
-              that.initBill();
             }).catch(function (err) {
               console.log(err);
               uni.showToast({
@@ -593,7 +595,6 @@ var _default = {
       // 						data: JSON.stringify(data),
       // 						success() {
       // 							uni.showToast({title: '删除成功'})
-      // 							that.initBill()
       // 						},
       // 						fail() {
       // 							uni.showToast({title: '删除失败'})

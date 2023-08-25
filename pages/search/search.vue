@@ -22,7 +22,7 @@
 				<view class="balance-item">
 					<view class="balance-info">
 						<view class="balance-item-title">总结余</view>
-						<view class="balance-item-value font-max">￥{{Number(monthIncome - Math.abs(monthOutput)) * 100 / 100}}</view>
+						<view class="balance-item-value font-max">￥{{(Number(monthIncome - Math.abs(monthOutput)) * 100 / 100).toFixed(2)}}</view>
 					</view>
 				</view>
 			</view>
@@ -137,7 +137,6 @@
 		},
 		async onShow() {
 			await this.getData()
-			this.filterBill()
 		},
 		methods: {
 			getMonthDay(year, month) {

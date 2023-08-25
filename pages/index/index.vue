@@ -22,7 +22,7 @@
 				<view class="balance-item">
 					<view class="balance-info">
 						<view class="balance-item-title">总结余</view>
-						<view class="balance-item-value font-max">￥{{Number(monthIncome - Math.abs(monthOutput)) * 100 / 100}}</view>
+						<view class="balance-item-value font-max">￥{{(Number(monthIncome - Math.abs(monthOutput)) * 100 / 100).toFixed(2)}}</view>
 					</view>
 				</view>
 			</view>
@@ -54,6 +54,9 @@
 				<view class="budget-progress-bar" :style="{width: progressWidth, background: primaryTheme + ' !important'}"></view>
 			</view>
 		</view>
+		
+		<!-- 获取数据 -->
+		<button @click="initBill">获取当月数据</button>
 		
 		<!-- 账单列表 -->
 		<view class="bill" v-if="billList.length">
@@ -101,7 +104,7 @@
 		<uni-icons class="fixed-icon" type="plus-filled" size="50" :color="primaryTheme" @click="toPath('/pages/add-bill/add-bill')"></uni-icons>
 		
 		<!-- 侧边栏 -->
-		<Sider ref="sider" :curMonth="curMonth" @change="change" @initBuget="initBuget" @initBill="initBill"></Sider>
+		<Sider ref="sider" :curMonth="curMonth" @change="change" @initBuget="initBuget"></Sider>
 	</view>
 </template>
 
@@ -165,7 +168,6 @@
 					uni.navigateTo({ url:'/pages/login/index' })
 				}
 			})
-			this.initBill()
 			this.initBuget()
 		},
 		methods: {
@@ -202,7 +204,6 @@
 				})
 			},
 			initBill () {
-				return false
 				const that = this
 				const curDate = dayjs(that.curMonth).format('YYYY-MM')
 				// console.log(curDate)
@@ -301,7 +302,6 @@
 			},
 			changeDatetimePicker (date) {
 				this.curMonth = `${date.YYYY}-${date.MM}-${date.DD} ${date.hh}:${date.mm}`
-				this.initBill()
 				this.initBuget()
 			},
 			formatDate (value, format) {
@@ -331,7 +331,6 @@
 								_id: v._id
 							}).remove().then(() => {
 								uni.showToast({title: '删除成功'})
-								that.initBill()
 							}).catch((err) => {
 								console.log(err)
 								uni.showToast({icon:'error',title: '删除失败'})
@@ -359,7 +358,6 @@
 				// 						data: JSON.stringify(data),
 				// 						success() {
 				// 							uni.showToast({title: '删除成功'})
-				// 							that.initBill()
 				// 						},
 				// 						fail() {
 				// 							uni.showToast({title: '删除失败'})

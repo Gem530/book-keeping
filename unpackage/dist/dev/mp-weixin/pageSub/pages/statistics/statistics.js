@@ -103,42 +103,50 @@ var render = function () {
   var _vm = this
   var _h = _vm.$createElement
   var _c = _vm._self._c || _h
-  var m0 = Number(_vm.monthIncome - Math.abs(_vm.monthOutput))
-  var g0 = _vm.billList.length
-  var g1 = _vm.pieList.length
-  var l0 = g1
+  var g0 = _vm.monthIncome.toFixed(2)
+  var g1 = _vm.monthOutput.toFixed(2)
+  var g2 = (
+    (Number(_vm.monthIncome - Math.abs(_vm.monthOutput)) * 100) /
+    100
+  ).toFixed(2)
+  var g3 = _vm.billList.length
+  var g4 = _vm.average.toFixed(2)
+  var g5 = _vm.pieList.length
+  var l0 = g5
     ? _vm.__map(_vm.pieList, function (item, __i0__) {
         var $orig = _vm.__get_orig(item)
+        var m0 = _vm.getCurPer(item.value)
         var m1 = _vm.getCurPer(item.value)
-        var m2 = _vm.getCurPer(item.value)
+        var g6 = item.value.toFixed(2)
         return {
           $orig: $orig,
+          m0: m0,
           m1: m1,
-          m2: m2,
+          g6: g6,
         }
       })
     : null
-  var g2 = _vm.dayStatistics.length
-  var l1 = g2
+  var g7 = _vm.dayStatistics.length
+  var l1 = g7
     ? _vm.__map(_vm.dayStatistics, function (item, __i1__) {
         var $orig = _vm.__get_orig(item)
-        var m3 = _vm.formatDate(item.time, _vm.yOrM ? "MM-DD" : "YYYY-MM")
-        var g3 = Math.abs(item.output)
+        var m2 = _vm.formatDate(item.time, _vm.yOrM ? "MM-DD" : "YYYY-MM")
+        var g8 = Math.abs(item.output)
+        return {
+          $orig: $orig,
+          m2: m2,
+          g8: g8,
+        }
+      })
+    : null
+  var g9 = _vm.billList.length
+  var l2 = g9
+    ? _vm.__map(_vm.billList.slice(0, 20), function (item, __i2__) {
+        var $orig = _vm.__get_orig(item)
+        var m3 = _vm.formatDate(item.time, "YYYY-MM-DD HH:mm")
         return {
           $orig: $orig,
           m3: m3,
-          g3: g3,
-        }
-      })
-    : null
-  var g4 = _vm.billList.length
-  var l2 = g4
-    ? _vm.__map(_vm.billList.slice(0, 20), function (item, __i2__) {
-        var $orig = _vm.__get_orig(item)
-        var m4 = _vm.formatDate(item.time, "YYYY-MM-DD HH:mm")
-        return {
-          $orig: $orig,
-          m4: m4,
         }
       })
     : null
@@ -146,13 +154,16 @@ var render = function () {
     {},
     {
       $root: {
-        m0: m0,
         g0: g0,
         g1: g1,
-        l0: l0,
         g2: g2,
-        l1: l1,
+        g3: g3,
         g4: g4,
+        g5: g5,
+        l0: l0,
+        g7: g7,
+        l1: l1,
+        g9: g9,
         l2: l2,
       },
     }
@@ -200,6 +211,9 @@ exports.default = void 0;
 var _regenerator = _interopRequireDefault(__webpack_require__(/*! @babel/runtime/regenerator */ 28));
 var _asyncToGenerator2 = _interopRequireDefault(__webpack_require__(/*! @babel/runtime/helpers/asyncToGenerator */ 31));
 var _dayjs = _interopRequireDefault(__webpack_require__(/*! dayjs */ 53));
+//
+//
+//
 //
 //
 //
@@ -420,8 +434,7 @@ var _default = {
               // console.log(option)
               _this.type = option.type;
               // await this.getData()
-              _this.initBill();
-            case 2:
+            case 1:
             case "end":
               return _context.stop();
           }
@@ -432,7 +445,6 @@ var _default = {
   methods: {
     chooseYearOrMonth: function chooseYearOrMonth(v) {
       this.yOrM = v;
-      this.initBill();
     },
     // 返回时间戳
     getTimeStr: function getTimeStr(v) {
@@ -738,7 +750,7 @@ var _default = {
     },
     // 获取当前分类总占比
     getCurPer: function getCurPer(val) {
-      return (val / (this.type == 'income' ? this.monthIncome : Math.abs(this.monthOutput)) * 100).toFixed(2);
+      return val / (this.type == 'income' ? this.monthIncome : Math.abs(this.monthOutput)) * 100;
     },
     // 获取当前月份天数  传入格式'2023-05'
     getCurMonthDay: function getCurMonthDay(month) {
@@ -749,11 +761,9 @@ var _default = {
     },
     changeDatetimePicker: function changeDatetimePicker(date) {
       this.curMonth = "".concat(date.YYYY, "-").concat(date.MM, "-").concat(date.DD, " ").concat(date.hh, ":").concat(date.mm);
-      this.initBill();
     },
     chooseType: function chooseType(val) {
       this.type = val;
-      this.initBill();
     },
     // 折线图初始化值
     initLine: function initLine() {
